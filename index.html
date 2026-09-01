@@ -1,0 +1,1689 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PIRLO Boys FPL Draft Auction 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#f4f6f1; --card:#ffffff; --card2:#eef1ea; --ink:#14201a; --muted:#5c6b61;
+  --line:#dbe2d6; --turf:#008a4e; --turf-bright:#00b364; --turf-soft:#e2f3e8;
+  --night:#2a0f4a; --amber:#b07d00; --amber-soft:#fdf3d7; --danger:#c23a34; --danger-soft:#fbe6e4;
+  --gold:#a87b00; --shadow:0 8px 30px rgba(20,32,26,.08);
+  --t1:#7a2ff0; --t2:#0072d6; --t3:#00915a; --t4:#7a8a80;
+}
+[data-theme="dark"]{
+  --bg:#120a1e; --card:#1c1230; --card2:#251840; --ink:#eee9f6; --muted:#9d92b5;
+  --line:#33254f; --turf:#00ff87; --turf-bright:#00ff87; --turf-soft:#0f2e22;
+  --night:#e9dcff; --amber:#ffce4d; --amber-soft:#3a2d0a; --danger:#ff6b61; --danger-soft:#3d1512;
+  --gold:#ffd257; --shadow:0 8px 30px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:'Instrument Sans',system-ui,sans-serif;font-size:15px;line-height:1.5;transition:background .25s,color .25s}
+[data-theme="dark"] body{background-image:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(122,47,240,.14),transparent)}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select{font-family:inherit;font-size:14px;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 10px;outline:none}
+input:focus,select:focus{border-color:var(--turf)}
+h1,h2,h3,.disp{font-family:'Chakra Petch',monospace}
+.mono{font-family:'Chakra Petch',monospace;font-variant-numeric:tabular-nums}
+a{color:var(--turf)}
+
+/* ---------- shell ---------- */
+header{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.hwrap{max-width:1320px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.logo{font-family:'Chakra Petch';font-weight:700;font-size:19px;letter-spacing:.5px;display:flex;align-items:center;gap:9px}
+.logo .dot{width:10px;height:10px;border-radius:50%;background:var(--turf);box-shadow:0 0 12px var(--turf)}
+nav{display:flex;gap:4px;flex-wrap:wrap}
+nav button{padding:7px 14px;border-radius:999px;font-weight:600;font-size:13.5px;color:var(--muted);transition:.15s}
+nav button:hover{color:var(--ink)}
+nav button.on{background:var(--turf);color:var(--bg);}
+[data-theme="light"] nav button.on{color:#fff}
+.hspacer{flex:1}
+.hbtn{padding:7px 12px;border:1px solid var(--line);border-radius:9px;font-size:13px;font-weight:600;background:var(--card)}
+.hbtn:hover{border-color:var(--turf)}
+main{max-width:1320px;margin:0 auto;padding:22px 20px 80px}
+.view{display:none}.view.on{display:block}
+.view.wide{position:relative;left:50%;transform:translateX(-50%);width:min(1840px,97vw)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+.eyebrow{font-family:'Chakra Petch';font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);font-weight:600}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:10px 18px;border-radius:10px;font-weight:700;font-size:14px;background:var(--turf);color:#fff;transition:.15s}
+[data-theme="dark"] .btn{color:#0b1a12}
+.btn:hover{filter:brightness(1.08)}
+.btn.ghost{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+.btn.warn{background:var(--danger);color:#fff}
+.btn.gold{background:var(--gold);color:#fff}
+[data-theme="dark"] .btn.gold{color:#231a00}
+.btn:disabled{opacity:.4;cursor:not-allowed;filter:none}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;font-family:'Chakra Petch';letter-spacing:.5px}
+.tier-1{background:var(--t1);color:#fff}.tier-2{background:var(--t2);color:#fff}.tier-3{background:var(--t3);color:#fff}.tier-4{background:var(--t4);color:#fff}
+.pos-GK{color:var(--amber)}.pos-DEF{color:var(--t2)}.pos-MID{color:var(--turf)}.pos-FWD{color:var(--danger)}
+.grid{display:grid;gap:16px}
+.muted{color:var(--muted)}
+.small{font-size:12.5px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-family:'Chakra Petch';font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line);cursor:pointer;user-select:none;white-space:nowrap}
+td{padding:8px 10px;border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--card2)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 20px;border-radius:12px;font-weight:600;font-size:14px;z-index:200;opacity:0;pointer-events:none;transition:.3s;max-width:90vw;text-align:center}
+.toast.show{opacity:1}
+
+/* ---------- setup ---------- */
+.setup-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:18px}
+.steptag{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:var(--turf);color:#fff;font-family:'Chakra Petch';font-weight:700;font-size:13px;margin-right:9px}
+[data-theme="dark"] .steptag{color:#0b1a12}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.field label{font-size:12.5px;font-weight:600;color:var(--muted)}
+.frow{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.frow .field{flex:1;min-width:110px}
+.frow .field label{min-height:32px;display:flex;align-items:flex-end}
+.pname{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+.pname input{flex:1}
+.pname .rm{color:var(--danger);font-size:18px;padding:0 6px}
+.drop{border:2px dashed var(--line);border-radius:12px;padding:18px;text-align:center;color:var(--muted);font-size:13px;transition:.2s}
+.drop.over{border-color:var(--turf);background:var(--turf-soft)}
+.loaded-badge{display:inline-flex;gap:8px;align-items:center;background:var(--turf-soft);color:var(--turf);border-radius:10px;padding:8px 14px;font-weight:700;font-size:13.5px}
+
+
+.subsection{margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}
+.subgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:10px}
+.subcard{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px}
+.subhead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.subrow{display:grid;grid-template-columns:68px 1fr auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.subplayer{min-width:0}.substitution-box{margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--card2)}
+.subcontrols{display:grid;grid-template-columns:1fr 1.5fr 1.5fr auto;gap:8px;margin-top:10px}
+@media(max-width:800px){.subcontrols{grid-template-columns:1fr}.subrow{grid-template-columns:64px 1fr}.subrow .cellbtns{grid-column:2}}
+
+/* ---------- auction ---------- */
+.auction-grid{display:grid;grid-template-columns:270px 1fr 330px;gap:18px;align-items:start}
+.rostrum{position:relative;overflow:hidden;border-radius:20px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow)}
+.rostrum::before{content:"";position:absolute;inset:0;background:
+  repeating-linear-gradient(0deg,transparent 0 64px,color-mix(in srgb,var(--turf) 7%,transparent) 64px 128px);pointer-events:none}
+.rostrum-inner{position:relative;padding:26px 26px 22px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.player-photo-wrap{width:150px;height:150px;margin:4px 0 2px;border-radius:18px;overflow:hidden;background:var(--card2);border:1px solid var(--line);box-shadow:0 10px 24px rgba(0,0,0,.12);display:flex;align-items:flex-end;justify-content:center}
+.player-photo{width:100%;height:100%;object-fit:contain;object-position:center bottom;display:block}
+.player-photo-fallback{font-family:'Chakra Petch';font-size:44px;font-weight:700;color:var(--muted);display:flex;align-items:center;justify-content:center;width:100%;height:100%}
+.rostrum .ticket-edge{position:absolute;top:0;left:0;right:0;height:6px;background:repeating-linear-gradient(90deg,var(--turf) 0 14px,transparent 14px 24px)}
+.onblock-name{font-family:'Chakra Petch';font-weight:700;font-size:clamp(28px,4.4vw,46px);letter-spacing:.5px;line-height:1.1;margin-top:6px}
+.onblock-meta{display:flex;gap:14px;align-items:center;font-family:'Chakra Petch';font-weight:600;font-size:14px;flex-wrap:wrap;justify-content:center}
+.pricebase{font-size:13px;color:var(--muted)}
+.ring{position:relative;width:118px;height:118px;margin:10px 0 2px}
+.ring svg{transform:rotate(-90deg)}
+.ring .t{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Chakra Petch'}
+.ring .sec{font-size:30px;font-weight:700;line-height:1}
+.ring .lbl{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
+.gavel-state{font-family:'Chakra Petch';font-weight:700;font-size:15px;letter-spacing:2px;text-transform:uppercase;min-height:22px}
+.gavel-state.once{color:var(--amber);animation:pulse .8s infinite}
+.gavel-state.twice{color:var(--danger);animation:pulse .45s infinite}
+@keyframes pulse{50%{opacity:.35}}
+.curbid{display:flex;gap:22px;align-items:baseline;margin:2px 0 4px;flex-wrap:wrap;justify-content:center}
+.curbid .amt{font-family:'Chakra Petch';font-weight:700;font-size:40px;color:var(--turf)}
+.curbid .who{font-size:15px;font-weight:600}
+.bidders{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:8px 0 4px}
+.bchip{padding:8px 13px;border-radius:11px;border:1.5px solid var(--line);background:var(--card2);font-weight:600;font-size:13.5px;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:86px;transition:.12s}
+.bchip .mx{font-size:10.5px;color:var(--muted);font-family:'Chakra Petch'}
+.bchip:hover:not(:disabled){border-color:var(--turf);transform:translateY(-1px)}
+.bchip.lead{border-color:var(--turf);background:var(--turf-soft);box-shadow:0 0 0 2px color-mix(in srgb,var(--turf) 35%,transparent)}
+.bchip:disabled{opacity:.32;cursor:not-allowed}
+.bidctl{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:2px}
+.bidctl .inc{padding:9px 14px;border-radius:10px;border:1px solid var(--line);background:var(--card2);font-family:'Chakra Petch';font-weight:700;font-size:14px}
+.bidctl .inc:hover{border-color:var(--turf)}
+.rostrum-actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;justify-content:center}
+.secthead{font-family:'Chakra Petch';font-size:10.5px;letter-spacing:2.5px;font-weight:700;color:var(--muted);margin-top:12px;display:flex;align-items:center;gap:8px}
+.secthead::before,.secthead::after{content:"";height:1px;background:var(--line);width:34px}
+.pricectl{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:8px}
+.pricectl .stp{width:44px;height:44px;border-radius:11px;border:1px solid var(--line);background:var(--card2);font-family:'Chakra Petch';font-weight:700;font-size:19px}
+.pricectl .stp:hover{border-color:var(--turf)}
+.pricectl input{width:110px;text-align:center;font-family:'Chakra Petch';font-weight:700;font-size:21px;padding:8px 6px}
+.pricectl .qk{padding:7px 11px;border-radius:9px;border:1px solid var(--line);background:var(--card2);font-family:'Chakra Petch';font-weight:600;font-size:12.5px}
+.pricectl .qk:hover{border-color:var(--turf)}
+.maxhint{font-size:12px;color:var(--muted);font-family:'Chakra Petch';margin-top:4px}
+.loglist .li{align-items:center}
+.logbtns{display:flex;gap:4px}
+.logbtns button{padding:2px 7px;border-radius:7px;border:1px solid var(--line);background:var(--card);font-size:12px}
+.logbtns button:hover{border-color:var(--turf)}
+.editrow{display:flex;flex-direction:column;gap:7px;padding:9px 10px;border-radius:9px;background:var(--card2);border:1px solid var(--turf)}
+.editrow .er{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.editrow select,.editrow input{padding:5px 8px;font-size:12.5px}
+.editrow input{width:80px}
+.soldflash{animation:soldpop .7s ease}
+@keyframes soldpop{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--turf) 60%,transparent)}100%{box-shadow:0 0 0 40px transparent}}
+.tierbars{display:flex;flex-direction:column;gap:10px}
+.tbar{display:flex;align-items:center;gap:10px;font-size:12.5px}
+.tbar .track{flex:1;height:8px;border-radius:4px;background:var(--card2);overflow:hidden}
+.tbar .fill{height:100%;border-radius:4px}
+.sidehead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
+.loglist{display:flex;flex-direction:column;gap:8px;max-height:340px;overflow:auto;font-size:13px}
+.loglist .li{display:flex;justify-content:space-between;gap:10px;padding:7px 10px;border-radius:9px;background:var(--card2)}
+.squad-mini{display:flex;flex-direction:column;gap:9px;max-height:520px;overflow:auto}
+.sqrow{padding:10px 12px;border-radius:11px;background:var(--card2);border:1px solid transparent}
+.sqrow.lead{border-color:var(--turf)}
+.sqrow .top{display:flex;justify-content:space-between;font-weight:700;font-size:13.5px}
+.sqrow .bot{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);font-family:'Chakra Petch';margin-top:2px}
+.bal{color:var(--turf);font-family:'Chakra Petch';font-weight:700}
+.needbar{height:5px;border-radius:3px;background:var(--line);margin-top:7px;overflow:hidden}
+.needbar i{display:block;height:100%;background:var(--turf)}
+
+/* ---------- pools/squads ---------- */
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.filters input[type=search]{min-width:200px;flex:1}
+.sq-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.sq-card .hd{display:flex;justify-content:space-between;align-items:start;margin-bottom:10px}
+.sq-card .nm{font-family:'Chakra Petch';font-weight:700;font-size:17px}
+.sq-card table{font-size:12.5px}
+.sq-card td{padding:5px 8px}
+.slotpills{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap}
+.slotpills span{font-size:10.5px;font-family:'Chakra Petch';font-weight:600;padding:2px 8px;border-radius:999px;background:var(--card2);border:1px solid var(--line)}
+.slotpills span.full{background:var(--turf-soft);color:var(--turf);border-color:transparent}
+
+/* ---------- manager profiles ---------- */
+.profile-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
+.profile-card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:var(--shadow);overflow:hidden}
+.profile-card:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(0,0,0,.10)}
+.profile-top{display:flex;flex-direction:column;gap:12px;align-items:center;text-align:center;margin-bottom:18px}
+.manager-photo-wrap{width:190px;height:190px;flex:0 0 190px;border-radius:50%;overflow:hidden;background:var(--card2);border:4px solid var(--line);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.manager-photo{width:100%;height:100%;object-fit:cover;display:block}
+.manager-photo-fallback{font-family:'Chakra Petch';font-size:56px;font-weight:700;color:var(--muted)}
+.profile-name{font-family:'Chakra Petch';font-size:26px;font-weight:800;letter-spacing:.2px}
+.profile-subtitle{font-size:13px;color:var(--muted);margin-top:2px}
+.profile-history{margin-top:4px;border-top:1px solid var(--line);padding-top:16px}
+.profile-history-title{font-family:'Chakra Petch';font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px}
+.profile-rank{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.profile-rank .field{margin-bottom:0}
+.profile-rank .field label{font-size:11px}
+.profile-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+.profile-note{padding:12px 14px;border:1px dashed var(--line);border-radius:12px;background:var(--card2);margin-bottom:18px}
+@media(max-width:600px){.profile-grid{grid-template-columns:1fr}.manager-photo-wrap{width:170px;height:170px;flex-basis:170px}.profile-rank{grid-template-columns:1fr}}
+
+/* ---------- manager identity in auction ---------- */
+.auction-manager-chip{display:flex;align-items:center;gap:9px;text-align:left;padding:8px 10px}
+.auction-manager-avatar{width:34px;height:34px;border-radius:50%;overflow:hidden;flex:0 0 34px;background:var(--card2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:'Chakra Petch';font-weight:800;font-size:12px}
+.auction-manager-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.auction-manager-meta{min-width:0;display:flex;flex-direction:column;line-height:1.1}
+.auction-manager-name{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.auction-manager-team{font-weight:800;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.auction-manager-name{display:none}
+.auction-winner-card{display:flex;align-items:center;gap:14px;margin:12px 0;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--card2)}
+.auction-winner-avatar{width:62px;height:62px;border-radius:50%;overflow:hidden;flex:0 0 62px;background:var(--card);border:2px solid var(--turf);display:flex;align-items:center;justify-content:center;font-family:'Chakra Petch';font-weight:800;font-size:20px}
+.auction-winner-avatar img{width:100%;height:100%;object-fit:cover}
+.auction-winner-team{font-size:12px;color:var(--muted);margin-top:2px}
+/* ---------- leaderboard ---------- */
+.lb-hero{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-bottom:16px}
+.rank1 td{background:color-mix(in srgb,var(--gold) 12%,transparent)}
+.mv-up{color:var(--turf);font-weight:700}.mv-dn{color:var(--danger);font-weight:700}
+
+.empty{padding:50px 20px;text-align:center;color:var(--muted)}
+.empty .big{font-family:'Chakra Petch';font-size:19px;font-weight:700;color:var(--ink);margin-bottom:6px}
+
+/* excel-style squad board */
+.viewbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.xl-wrap{overflow:auto;max-height:78vh;border:1px solid var(--line);border-radius:12px}
+table.xl{border-collapse:separate;border-spacing:0;font-size:12px;table-layout:fixed;width:100%;min-width:1080px}
+.xl th,.xl td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:5px 7px;white-space:nowrap;text-align:left;overflow:hidden;text-overflow:ellipsis}
+.xl thead th{position:sticky;top:0;background:var(--card2);z-index:3;font-family:'Chakra Petch';font-size:11.5px;letter-spacing:.5px;cursor:default}
+.xl td:first-child,.xl th:first-child{position:sticky;left:0;background:var(--card2);z-index:2;font-family:'Chakra Petch';font-weight:600;font-size:11px;width:64px}
+.xl thead th:first-child{z-index:4}
+.xl td .pd{color:var(--muted);font-family:'Chakra Petch';font-size:11px}
+.xl td.cell-empty{color:var(--line)}
+.xl tr.sumrow td{background:var(--card2);font-weight:700;font-family:'Chakra Petch';border-top:2px solid var(--line)}
+.xl tr.sumrow td:first-child{font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted)}
+.xl td.v-bal{color:var(--turf)}.xl td.v-max{color:var(--gold)}
+.xl td{position:relative}
+.cellbtns{display:inline-flex;gap:3px;opacity:0;transition:.12s;position:absolute;right:3px;top:50%;transform:translateY(-50%);background:var(--card);padding:2px 2px 2px 6px;border-radius:7px}
+.xl td:hover .cellbtns{opacity:1}
+.cellbtns button{padding:1px 6px;border-radius:6px;border:1px solid var(--line);background:var(--card);font-size:11px}
+.cellbtns button:hover{border-color:var(--turf)}
+.sqadd{width:100%;text-align:left;color:var(--muted);font-size:12px;padding:2px 0;border-radius:6px}
+.sqadd:hover{color:var(--turf)}
+.sqedit{display:flex;flex-direction:column;gap:5px;position:absolute;z-index:6;top:2px;left:2px;min-width:235px;background:var(--card);border:1.5px solid var(--turf);border-radius:11px;padding:9px;box-shadow:var(--shadow)}
+.xl td:has(.sqedit){overflow:visible}
+.sqedit input{padding:5px 8px;font-size:12.5px;width:100%}
+.sqedit .row2{display:flex;gap:5px;align-items:center}
+.sqedit .row2 input{width:70px}
+.sqedit .row2 button{padding:4px 9px;border-radius:7px;border:1px solid var(--line);background:var(--card);font-size:12px}
+.sqedit .row2 button:hover{border-color:var(--turf)}
+.sqedit .hint{font-size:10.5px;color:var(--muted);font-family:'Chakra Petch'}
+@media (max-width:1080px){.auction-grid{grid-template-columns:1fr}.setup-grid{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+:focus-visible{outline:2px solid var(--turf);outline-offset:2px}
+</style>
+<style id="funky-manager-profiles">.manager-profile-grid{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))!important;gap:24px!important}.manager-profile-card{position:relative!important;overflow:hidden!important;min-height:500px!important;border-radius:28px!important;padding:0!important;background:linear-gradient(145deg,rgba(20,24,38,.98),rgba(10,12,22,.98))!important;border:1px solid rgba(255,255,255,.14)!important;box-shadow:0 18px 50px rgba(0,0,0,.35)!important;transition:transform .22s ease,box-shadow .22s ease!important}.manager-profile-card:hover{transform:translateY(-6px) scale(1.01)!important;box-shadow:0 26px 65px rgba(0,0,0,.5)!important}.manager-profile-card .manager-photo,.manager-profile-card img{width:100%!important;height:340px!important;object-fit:cover!important;object-position:center top!important;display:block!important;border-radius:0!important}.manager-profile-card::after{content:""!important;position:absolute!important;left:0;right:0;top:250px;height:150px;background:linear-gradient(transparent,rgba(10,12,22,.96))!important;pointer-events:none!important}.manager-profile-card .manager-info,.manager-profile-card .profile-info{position:relative!important;z-index:2!important;padding:18px 22px 24px!important;margin-top:-12px!important}.manager-profile-card .manager-name,.manager-profile-card .profile-name{font-size:28px!important;font-weight:900!important;letter-spacing:-.5px!important}.manager-profile-card .team-name{font-size:15px!important;font-weight:700!important;opacity:.9!important;margin-top:6px!important}.manager-profile-card .history,.manager-profile-card .profile-history{margin-top:14px!important;padding-top:12px!important;border-top:1px solid rgba(255,255,255,.12)!important}.manager-profile-card .history span,.manager-profile-card .profile-history span{display:inline-block!important;margin-right:8px!important;margin-bottom:6px!important;padding:5px 9px!important;border-radius:999px!important;background:rgba(255,255,255,.08)!important}@media(max-width:650px){.manager-profile-card .manager-photo,.manager-profile-card img{height:300px!important}}</style>
+</head>
+<body>
+
+<header>
+  <div class="hwrap">
+    <div class="logo"><span class="dot"></span>PIRLO BOYS <span class="muted" style="font-size:11px;font-weight:500;letter-spacing:1px">FPL DRAFT AUCTION · 2026/27</span></div>
+    <nav id="nav">
+      <button data-v="setup" class="on">Setup</button>
+      <button data-v="auction">Auction</button>
+      <button data-v="players">Player Pool</button>
+      <button data-v="remaining">Remaining</button>
+      <button data-v="squads">Squads</button>
+      <button data-v="profiles">Manager Profiles</button>
+    </nav>
+    <div class="hspacer"></div>
+    <button class="hbtn" id="btnExport" title="Download the full auction state as an Excel file">Export .xlsx</button>
+    <button class="hbtn" id="btnImport" title="Restore from an exported Excel file">Import .xlsx</button>
+    <input type="file" id="importFile" accept=".xlsx,.json" hidden>
+    <button class="hbtn" id="btnTheme" title="Toggle light / dark">◐</button>
+  </div>
+</header>
+
+<main>
+
+<!-- ================= SETUP ================= -->
+<section class="view on" id="v-setup">
+  <div class="setup-grid">
+    <div class="grid">
+      <div class="card">
+        <h2 style="font-size:17px;margin-bottom:4px"><span class="steptag">1</span>Load the player pool</h2>
+        <p class="muted small" style="margin-bottom:14px">Pulled live from the official FPL API (prices, positions, teams). Tiers are auto-assigned from price — tweak thresholds below. If the API is blocked on your network, upload a CSV instead.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <button class="btn" id="btnFetchFPL">⚡ Fetch from FPL API</button>
+          <span id="loadStatus" class="muted small"></span>
+        </div>
+        <div style="margin:14px 0 6px" class="drop" id="dropZone">
+          Or drop / <label style="color:var(--turf);cursor:pointer;font-weight:600">browse<input type="file" id="csvFile" accept=".csv,.json" hidden></label> a CSV — columns: <span class="mono">name, team, position(GK/DEF/MID/FWD), price, tier(optional)</span>
+        </div>
+        <div id="loadedInfo"></div>
+        <div class="frow" style="margin-top:14px">
+          <div class="field"><label>Only include players priced ≥ (£m)</label><input type="number" id="setMinPrice" step="0.5" value="4.0"></div>
+          <div class="field"><label>Tier 1 from (£m)</label><input type="number" id="tT1" step="0.5" value="7.5"></div>
+          <div class="field"><label>Tier 2 from (£m)</label><input type="number" id="tT2" step="0.5" value="5.5"></div>
+        </div>
+        <div class="frow">
+          <div class="field"><label>Target pool size</label><input type="number" id="setTarget" value="200"></div>
+          <div class="field"><label>Always include players ≥ (£m)</label><input type="number" id="setGuarantee" step="0.5" value="6.0"></div>
+        </div>
+        <p class="muted small"><b>Target pool size is a hard cap.</b> Players at or above the guarantee price, plus early-season protected players, are prioritised first. If those protected players exceed the target, the highest-priority ones are kept until the target is reached; remaining slots are filled with the best cheaper players by position need. The badge above shows the exact pool count after each sync.</p>
+      </div>
+
+      <div class="card">
+        <h2 style="font-size:17px;margin-bottom:4px"><span class="steptag">2</span>Managers</h2>
+        <p class="muted small" style="margin-bottom:12px">Your 8 managers are preloaded; you can add or remove managers if needed.</p>
+        <div id="pnames"></div>
+        <button class="btn ghost" id="btnAddP" style="margin-top:4px">+ Add manager</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2 style="font-size:17px;margin-bottom:4px"><span class="steptag">3</span>Auction rules</h2>
+        <div class="frow" style="margin-top:10px">
+          <div class="field"><label>Budget per manager (£m)</label><input type="number" id="setBudget" value="100" step="5"></div>
+          <div class="field"><label>Bid timer (seconds)</label><input type="number" id="setTimer" value="20" step="5"></div>
+          <div class="field"><label>Opening bid — every player (£m)</label><input type="number" id="setOpenBid" value="1" step="0.5"></div>
+          <div class="field"><label>Minimum raise (£m)</label><input type="number" id="setMinBid" value="1" step="0.5"></div>
+        </div>
+        <div class="frow">
+          <div class="field"><label>GK slots</label><input type="number" id="qGK" value="2"></div>
+          <div class="field"><label>DEF slots</label><input type="number" id="qDEF" value="5"></div>
+          <div class="field"><label>MID slots</label><input type="number" id="qMID" value="5"></div>
+          <div class="field"><label>FWD slots</label><input type="number" id="qFWD" value="3"></div>
+        </div>
+        <label style="display:flex;gap:8px;align-items:center;font-size:13px;margin-top:4px"><input type="checkbox" id="setSound" checked style="width:auto"> Gavel sounds (going once / twice / sold)</label>
+      </div>
+
+      <div class="card" style="border-color:var(--turf)">
+        <div class="eyebrow" style="color:var(--turf)">Fair-order guarantee</div>
+        <p class="small" style="margin-top:8px">The auction order is a <b>stratified random shuffle</b>: every tier is spread evenly across the whole auction, so premium players keep appearing from the first lot to the very last. <b>The upcoming order is hidden</b> — nobody can sit out and wait for a soft ending, and no seat position is favoured. Max bids are capped so every manager must keep enough budget to fill their remaining slots, and position quotas force everyone to compete for every role.</p>
+        <button class="btn" id="btnStart" style="margin-top:14px;width:100%;justify-content:center">🔨 Build queue &amp; start auction</button>
+        <button class="btn warn" id="btnReset" style="margin-top:8px;width:100%;justify-content:center">Reset everything</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= AUCTION ================= -->
+<section class="view" id="v-auction">
+  <div class="auction-grid">
+    <div class="grid">
+      <div class="card">
+        <div class="sidehead"><span class="eyebrow">Pool remaining</span><span style="display:flex;gap:8px;align-items:center"><span class="mono small" id="poolCount"></span><button class="hbtn" data-refresh="auction" title="Re-sync this screen">⟳</button></span></div>
+        <div class="tierbars" id="tierBars"></div>
+        <p class="small muted" style="margin-top:12px">Upcoming order is sealed 🔒 — tiers are evenly spread to the final lot.</p>
+      </div>
+      <div class="card">
+        <div class="sidehead"><span class="eyebrow">Hammer log</span><button class="hbtn" id="btnUndo">↩ Undo</button></div>
+        <div class="loglist" id="logList"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="rostrum" id="rostrum">
+        <div class="ticket-edge"></div>
+        <div class="rostrum-inner" id="rostrumInner"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sidehead"><span class="eyebrow">Squads · live</span><span class="small muted">balance / slots</span></div>
+      <div class="squad-mini" id="squadMini"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PLAYERS ================= -->
+<section class="view" id="v-players">
+  <div class="card">
+    <div class="filters">
+      <input type="search" id="fSearch" placeholder="Search player or team…">
+      <select id="fPos"><option value="">All positions</option><option>GK</option><option>DEF</option><option>MID</option><option>FWD</option></select>
+      <select id="fClub"><option value="">All clubs</option></select>
+      <select id="fOwner"><option value="">Won by: anyone</option></select>
+      <select id="fTier"><option value="">All tiers</option><option value="1">Tier 1</option><option value="2">Tier 2</option><option value="3">Tier 3</option></select>
+      <select id="fStatus"><option value="available">Available</option><option value="sold">Sold</option><option value="">Everything</option></select>
+      <span class="small muted" id="fCount"></span>
+      <div class="hspacer"></div>
+      <button class="hbtn" data-refresh="players">⟳ Refresh</button>
+    </div>
+    <div style="overflow:auto"><table id="poolTable"><thead><tr>
+      <th data-s="name">Player</th><th data-s="team">Team</th><th data-s="pos">Pos</th><th data-s="price">Price</th><th data-s="tier">Tier</th><th data-s="pts" id="thPts">Pts</th><th data-s="ppg">PPG</th><th data-s="status">Status</th>
+    </tr></thead><tbody></tbody></table></div>
+  </div>
+</section>
+
+<!-- ================= REMAINING ================= -->
+<section class="view" id="v-remaining">
+  <div class="card">
+    <div class="filters">
+      <input type="search" id="rSearch" placeholder="Search player or team…">
+      <select id="rPos"><option value="">All positions</option><option>GK</option><option>DEF</option><option>MID</option><option>FWD</option></select>
+      <select id="rClub"><option value="">All clubs</option></select>
+      <select id="rTier"><option value="">All tiers</option><option value="1">Tier 1</option><option value="2">Tier 2</option><option value="3">Tier 3</option></select>
+      <span class="small muted" id="rCount"></span>
+      <div class="hspacer"></div>
+      <button class="hbtn" data-refresh="remaining">⟳ Refresh</button>
+    </div>
+    <div style="overflow:auto"><table id="remTable"><thead><tr>
+      <th data-s="name">Player</th><th data-s="team">Team</th><th data-s="pos">Pos</th><th data-s="price">Price</th><th data-s="tier">Tier</th><th data-s="pts" id="rthPts">Pts</th><th data-s="ppg">PPG</th>
+    </tr></thead><tbody></tbody></table></div>
+  </div>
+</section>
+
+<!-- ================= SQUADS ================= -->
+<section class="view wide" id="v-squads">
+  <div class="card">
+    <div class="viewbar">
+      <span class="eyebrow">Auction board · one column per manager</span>
+      <button class="hbtn" data-refresh="squads">⟳ Refresh</button>
+    </div>
+    <div class="xl-wrap" id="sqBoard"></div>
+  </div>
+</section>
+
+<!-- ================= MANAGER PROFILES ================= -->
+<section class="view" id="v-profiles">
+  <div class="card">
+    <div class="viewbar">
+      <div>
+        <span class="eyebrow">Manager profiles</span>
+        <div class="small muted" style="margin-top:3px">Eight managers · photo + historical FPL Draft league finishes. Photos are stored locally in this auction state; historical ranks must be entered from your league records.</div>
+      </div>
+      <button class="hbtn" data-refresh="profiles">⟳ Refresh</button>
+    </div>
+    <div class="profile-note small"><b>Historical positions:</b> the app cannot infer your private FPL Draft league's finishing positions from the public FPL player API. Enter the final league rank for 2024/25 and 2025/26 below. Example: <span class="mono">1</span> = champion, <span class="mono">8</span> = eighth.</div>
+    <div id="profilesGrid" class="profile-grid"></div>
+  </div>
+</section>
+
+
+
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ============================== STATE ============================== */
+const LS_KEY = "rostrum-fpl-2627";
+const POS = ["GK","DEF","MID","FWD"];
+const SUB_POS = ["DEF","MID","FWD"];
+const DEFAULT_NAMES = ["Anish","Aakash","Abhi","Kishu","Kumar","Shanky","Vichu","Vinod"];
+const FIXED_MANAGER_NAMES = ["Anish","Aakash","Abhi","Kishu","Kumar","Shanky","Vichu","Vinod"];
+let S = load() || freshState();
+// Older saved states may contain a pool larger than the configured target.
+// Re-trim an unstarted pool immediately so the new hard-cap rule takes effect.
+if(S.rawLoaded && !S.started){
+  S.players = trimPool(S.players);
+  save();
+}
+
+function freshState(){
+  return {
+    players: [],            // {id,name,team,pos,price,tier,status,ownerId,paid,photo}
+    rawLoaded: false,
+    participants: DEFAULT_NAMES.map((n,i)=>({id:i+1,name:n,budget:100,spent:0})),
+    profiles: Object.fromEntries(DEFAULT_NAMES.map((n,i)=>[i+1,{photo:"",teamName:"",history:{"2024/25":"","2025/26":""}}])),
+    subs: {},              // managerId -> {DEF: playerId|null, MID: playerId|null, FWD: playerId|null}
+    subHistory: [],        // {managerId,outId,inId,ts}
+    settings: {budget:100, timer:20, openBid:1, minBid:1, quota:{GK:2,DEF:5,MID:5,FWD:3}, minPrice:4.0, tiers:[7.5,5.5], targetPool:200, guaranteeMin:6.0, earlyGW:2, earlyPoints:6, sound:true},
+    queue: [],              // player ids, sealed order
+    qIndex: 0,
+    onBlock: null,          // {pid, bid, bidderId}
+    log: [],                // {playerId,name,buyer,amount,ts,type}
+    board: null,            // cached leaderboard {ts, gw, rows}
+    started: false,
+    view: "setup",
+    theme: (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
+  };
+}
+function migrate(s){
+  if(!s) return s;
+  const d = freshState().settings;
+  s.settings = Object.assign({}, d, s.settings||{});
+  if(s.settings.openBid==null) s.settings.openBid = 1;
+  if(!Array.isArray(s.settings.tiers) || s.settings.tiers.length!==2) s.settings.tiers=[7.5,5.5];
+  if(!(+s.settings.targetPool>0)) s.settings.targetPool=200;
+  if(!(+s.settings.guaranteeMin>0)) s.settings.guaranteeMin=6.0;
+  if(!(+s.settings.earlyGW>0)) s.settings.earlyGW=2;
+  if(s.settings.earlyPoints==null || isNaN(+s.settings.earlyPoints)) s.settings.earlyPoints=6;
+  if(s.settings.guaranteeMin===5.5) s.settings.guaranteeMin=6.0;   // upgrade the old default
+  delete s.settings.poolCaps;
+  delete s.settings.leagueId;
+  s.board = s.board || null;
+  s.subs = s.subs || {};
+  s.participants.forEach(m=>{ s.subs[m.id] = Object.assign({DEF:null,MID:null,FWD:null}, s.subs[m.id]||{}); });
+  s.subHistory = Array.isArray(s.subHistory) ? s.subHistory : [];
+  // Managers are fixed for the PIRLO Boys league. Preserve their IDs/data, but always restore the agreed names.
+  s.participants = Array.isArray(s.participants) ? s.participants.slice(0, FIXED_MANAGER_NAMES.length) : [];
+  FIXED_MANAGER_NAMES.forEach((name,i)=>{
+    if(!s.participants[i]) s.participants[i]={id:i+1,name,budget:s.settings.budget||100,spent:0};
+    s.participants[i].id=i+1;
+    s.participants[i].name=name;
+  });
+  s.profiles = s.profiles || {};
+  s.participants.forEach(m=>{ s.profiles[m.id] = Object.assign({photo:"",teamName:"",history:{"2024/25":"","2025/26":""}}, s.profiles[m.id]||{}); s.profiles[m.id].history=Object.assign({"2024/25":"","2025/26":""}, s.profiles[m.id].history||{}); });
+  return s;
+}
+function save(){ localStorage.setItem(LS_KEY, JSON.stringify(S)); }
+function load(){ try{ return migrate(JSON.parse(localStorage.getItem(LS_KEY))); }catch(e){ return null; } }
+
+/* ============================== UTIL ============================== */
+const $ = s => document.querySelector(s);
+const fmt = n => "£" + (+n).toFixed(1).replace(/\.0$/,"") + "m";
+const esc = s => String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"),2600); }
+function pById(id){ return S.players.find(p=>p.id===id); }
+/* compact display name for tight tables (squads, leaderboard) */
+const shortName = p => (p&&(p.web || (p.name||"").trim().split(" ").pop())) || "?";
+function playerPhotoUrl(p){
+  if(!p||!p.photo) return "";
+  const raw=String(p.photo);
+  const file=raw.replace(/^https?:\/\//,"").split("/").pop();
+  const base=file.replace(/\.(png|jpg|jpeg)$/i,"");
+  return `https://resources.premierleague.com/premierleague/photos/players/250x250/p${base}.png`;
+}
+function partById(id){ return S.participants.find(p=>p.id===id); }
+
+/* sounds */
+let AC=null;
+function beep(freq,dur,type){ if(!S.settings.sound) return; try{
+  AC = AC || new (window.AudioContext||window.webkitAudioContext)();
+  const o=AC.createOscillator(), g=AC.createGain();
+  o.type=type||"square"; o.frequency.value=freq; g.gain.value=.06;
+  o.connect(g); g.connect(AC.destination); o.start();
+  g.gain.exponentialRampToValueAtTime(.0001, AC.currentTime+dur); o.stop(AC.currentTime+dur);
+}catch(e){} }
+const sndOnce=()=>beep(660,.15), sndTwice=()=>beep(880,.15), sndSold=()=>{beep(520,.1);setTimeout(()=>beep(780,.18),110);}, sndBid=()=>beep(440,.06,"sine");
+
+/* ============================== DATA LOADING ============================== */
+/* The FPL API blocks cross-site browser requests (CORS), so:
+   1. /fpl-api/*  → same-origin proxy. Works when deployed on Netlify with the
+      netlify.toml redirect rule (100% reliable, no third parties).
+   2. Direct fetch (works in rare embedded/extension contexts).
+   3. Public CORS proxies as a last resort for local file:// use. */
+const PROXIES = [
+  {
+    name: "Cloudflare FPL proxy",
+    wrap: u =>
+      "https://pirlo-fpl-api.aanish0007.workers.dev/fpl-api/" +
+      u.split("/api/")[1]
+  },
+  {name:"direct",        wrap:u => u},
+  {name:"corsproxy.io",  wrap:u => "https://corsproxy.io/?url=" + encodeURIComponent(u)},
+  {name:"allorigins",    wrap:u => "https://api.allorigins.win/raw?url=" + encodeURIComponent(u)},
+  {name:"codetabs",      wrap:u => "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(u)},
+  {name:"allorigins-get",wrap:u => "https://api.allorigins.win/get?url=" + encodeURIComponent(u), unwrap:true},
+];
+async function fetchJSON(url, onStatus){
+  let lastErr;
+  for(const p of PROXIES){
+    // skip the Netlify route when running from a local file
+    if(p.name==="Netlify proxy" && location.protocol==="file:") continue;
+    try{
+      if(onStatus) onStatus("Trying "+p.name+"…");
+      const ctl=new AbortController(); const to=setTimeout(()=>ctl.abort(),9000);
+      const r = await fetch(p.wrap(url), {headers:{"Accept":"application/json"},signal:ctl.signal});
+      clearTimeout(to);
+      if(!r.ok) throw new Error("HTTP "+r.status);
+      let data = await r.json();
+      if(p.unwrap && data.contents) data = JSON.parse(data.contents); // allorigins /get envelope
+      if(typeof data!=="object" || data===null) throw new Error("Bad payload");
+      return data;
+    }catch(e){ lastErr=e; }
+  }
+  throw lastErr || new Error("All fetch routes failed");
+}
+
+function tierFor(price){
+  const [t1,t2] = S.settings.tiers;
+  return price>=t1?1 : price>=t2?2 : 3;
+}
+
+/* Pool builder v3.
+   1) EVERY player priced >= guaranteeMin is always included (no Tier 1/2 gaps).
+   2) Remaining room up to targetPool is filled with the best cheaper players,
+      allocated by how many sub-guarantee slots each position still needs
+      (position quota x managers, minus guaranteed players already covering it).
+   3) If guaranteed players alone exceed the target, the pool runs over - by design. */
+function trimPool(list){
+  const target = Math.min(S.settings.targetPool || 200, list.length);
+  const gmin   = S.settings.guaranteeMin || 6.0;
+  const q = S.settings.quota, n = S.participants.length || 8;
+
+  // Build three price tiers first. The pool is deliberately balanced across
+  // the tiers rather than allowing the protected-price rules to crowd T3 out.
+  const byTier = {1:[],2:[],3:[]};
+  list.forEach(p=>{
+    const t = Number(p.tier) || tierFor(p.price);
+    (byTier[t] || byTier[3]).push(p);
+  });
+
+  const priority = (a,b)=>
+    Number(b.earlyProtected)-Number(a.earlyProtected) ||
+    Number(b.price>=gmin)-Number(a.price>=gmin) ||
+    b.price-a.price ||
+    (b.earlyTotal||0)-(a.earlyTotal||0) ||
+    (b.pts||0)-(a.pts||0);
+
+  for(const t of [1,2,3]) byTier[t].sort(priority);
+
+  // Allocate the target as evenly as possible between T1/T2/T3, while
+  // allowing a tier to give its unused slots to another tier if it runs out.
+  const tierCount = {1:0,2:0,3:0};
+  let remaining = target;
+  while(remaining > 0){
+    const candidates = [1,2,3].filter(t=>tierCount[t] < byTier[t].length);
+    if(!candidates.length) break;
+    candidates.sort((a,b)=>
+      (tierCount[a]/Math.max(1,byTier[a].length)) -
+      (tierCount[b]/Math.max(1,byTier[b].length)) || a-b
+    );
+    tierCount[candidates[0]]++;
+    remaining--;
+  }
+
+  const selected = new Set();
+  const posNeed = {};
+  for(const ps of POS) posNeed[ps] = Math.max(0, (q[ps]||0)*n);
+
+  // First guarantee enough players at every squad position, while staying
+  // inside the balanced tier allocation.
+  for(const ps of POS){
+    while(posNeed[ps] > 0){
+      let best = null, bestTier = null;
+      for(const t of [1,2,3]){
+        if(tierCount[t] <= 0) continue;
+        const candidate = byTier[t].find(p=>p.pos===ps && !selected.has(p.id));
+        if(candidate && (!best || priority(candidate,best)<0)){
+          best = candidate; bestTier = t;
+        }
+      }
+      if(!best) break;
+      selected.add(best.id);
+      tierCount[bestTier]--;
+      posNeed[ps]--;
+    }
+  }
+
+  // Fill all remaining tier slots with the strongest remaining players from
+  // that tier. Protected/expensive/early-performing players are preferred.
+  for(const t of [1,2,3]){
+    const candidates = byTier[t].filter(p=>!selected.has(p.id));
+    for(const p of candidates){
+      if(tierCount[t] <= 0) break;
+      selected.add(p.id);
+      tierCount[t]--;
+    }
+  }
+
+  // Safety fill: if a position/tier combination was short, use any remaining
+  // player so the configured target remains an exact hard cap.
+  if(selected.size < target){
+    for(const p of [...list].sort(priority)){
+      if(selected.size >= target) break;
+      if(!selected.has(p.id)) selected.add(p.id);
+    }
+  }
+
+  return list.filter(p=>selected.has(p.id)).sort((a,b)=>
+    b.price-a.price ||
+    (b.earlyTotal||0)-(a.earlyTotal||0) ||
+    (b.pts||0)-(a.pts||0)
+  );
+}
+
+async function loadFromFPL(auto){
+  const st = $("#loadStatus");
+  if(!auto) st.textContent = "Fetching FPL player data…";
+  $("#btnFetchFPL").disabled = true;
+
+  try{
+    if(!auto) readSetupInputs();
+
+    const data = await fetchJSON(
+      "https://fantasy.premierleague.com/api/bootstrap-static/?_="+Date.now(),
+      auto ? null : (m=>st.textContent=m)
+    );
+
+    const teams = Object.fromEntries(data.teams.map(t=>[t.id,t.short_name]));
+    const posMap = {1:"GK",2:"DEF",3:"MID",4:"FWD"};
+    const min = S.settings.minPrice;
+
+    // The first two gameweeks are already complete. Fetch their historical
+    // live data so the pool can protect players who have actually started or
+    // produced enough points, rather than relying only on FPL price.
+    const earlyGW = Math.max(1, Math.min(2, +(S.settings.earlyGW||2)));
+    const earlyPoints = Math.max(0, +(S.settings.earlyPoints||6));
+    const earlyById = new Map();
+
+    for(let gw=1; gw<=earlyGW; gw++){
+      try{
+        const live = await fetchJSON(
+          "https://fantasy.premierleague.com/api/event/"+gw+"/live/?_="+Date.now(),
+          auto ? null : (m=>st.textContent="GW"+gw+" · "+m)
+        );
+
+        for(const el of (live.elements||[])){
+          const id = "fpl"+el.id;
+          const stats = el.stats || {};
+          const row = earlyById.get(id) || {total:0,starts:0,minutes:0,gws:[]};
+
+          row.total += +(stats.total_points||0);
+          row.starts += +(stats.starts||0);
+          row.minutes += +(stats.minutes||0);
+          if(+(stats.starts||0)>0) row.gws.push(gw);
+
+          earlyById.set(id,row);
+        }
+      }catch(gwErr){
+        // Do not prevent the whole pool from loading if one live endpoint
+        // temporarily fails. The normal price-based protections remain.
+        console.warn("Could not load GW"+gw+" live data", gwErr);
+      }
+    }
+
+    S.statsLabel = (data.events||[]).some(e=>e.is_current||e.finished)
+      ? "2026/27" : "2025/26";
+
+    const rawPlayers = data.elements
+      .filter(e => e.now_cost/10 >= min)
+      .map(e => {
+        const early = earlyById.get("fpl"+e.id) || {
+          total:0,starts:0,minutes:0,gws:[]
+        };
+
+        return {
+          id:"fpl"+e.id,
+          name:(((e.first_name||"")+" "+(e.second_name||"")).trim())||e.web_name,
+          web:e.web_name,
+          team:teams[e.team]||"?",
+          pos:posMap[e.element_type]||"MID",
+          price:e.now_cost/10,
+          tier:tierFor(e.now_cost/10),
+          photo:e.photo||null,
+          pts:e.total_points||0,
+          ppg:+e.points_per_game||0,
+          earlyTotal:early.total,
+          earlyStarts:early.starts,
+          earlyMinutes:early.minutes,
+          earlyGWs:early.gws,
+          // Protection rule: started at least once OR reached the early-points
+          // threshold across the first two completed gameweeks.
+          earlyProtected:early.starts>0 || early.total>=earlyPoints,
+          status:"available",
+          ownerId:null,
+          paid:0
+        };
+      });
+
+    S.players = trimPool(rawPlayers);
+    S.rawLoaded = true;
+    S.loadedAt = Date.now();
+    S.poolAudit = {
+      target: S.settings.targetPool||200,
+      protected: S.players.filter(p=>p.earlyProtected || p.price >= (S.settings.guaranteeMin||6)).length,
+      earlyProtected: S.players.filter(p=>p.earlyProtected).length,
+      earlyGW,
+      earlyPoints
+    };
+
+    save();
+    renderSetup();
+    if(S.view==="players") renderPool();
+
+    const protectedCount = S.players.filter(p=>p.earlyProtected).length;
+    st.textContent = "";
+    toast(auto
+      ? `Pool re-synced ✓ ${S.players.length} players (${protectedCount} early-season protected)`
+      : `Loaded ${S.players.length} players ✓ — ${protectedCount} early-season protected`
+    );
+  }catch(e){
+    if(auto){
+      $("#btnFetchFPL").disabled=false;
+      return;
+    }
+
+    st.textContent = location.protocol==="file:"
+      ? "The FPL API blocks browser requests (CORS) and the public proxy fallbacks didn't respond. Deploy to Netlify with netlify.toml for the reliable route."
+      : "Couldn't reach the FPL API. Make sure netlify.toml is deployed alongside this file.";
+    console.error(e);
+  }
+
+  $("#btnFetchFPL").disabled = false;
+}
+
+function parseCSV(text){
+  const lines = text.trim().split(/\r?\n/); if(!lines.length) return [];
+  const head = lines[0].toLowerCase().split(",").map(s=>s.trim());
+  const ix = k => head.findIndex(h=>h.includes(k));
+  const iN=ix("name"), iT=ix("team"), iP=ix("pos"), iC=ix("price"), iTi=ix("tier");
+  const out=[];
+  for(let l=1;l<lines.length;l++){
+    const c = lines[l].split(",").map(s=>s.trim()); if(!c[iN]) continue;
+    const price = parseFloat(c[iC])||5;
+    let pos = (c[iP]||"MID").toUpperCase(); if(!POS.includes(pos)) pos = pos.startsWith("G")?"GK":pos.startsWith("D")?"DEF":pos.startsWith("F")||pos.startsWith("S")?"FWD":"MID";
+    out.push({ id:"csv"+l, name:c[iN], team:iT>=0?(c[iT]||"—"):"—", pos, price,
+               tier: iTi>=0 && c[iTi] ? Math.min(3,Math.max(1,parseInt(c[iTi]))) : tierFor(price),
+               status:"available", ownerId:null, paid:0 });
+  }
+  return out.sort((a,b)=>b.price-a.price);
+}
+function handleFile(f){
+  const r = new FileReader();
+  r.onload = () => {
+    try{
+      readSetupInputs();
+      S.players = f.name.endsWith(".json") ? JSON.parse(r.result) : trimPool(parseCSV(r.result));
+      S.rawLoaded = S.players.length>0; save(); renderSetup();
+      toast(`Loaded ${S.players.length} players from ${f.name} ✓`);
+    }catch(e){ toast("Couldn't parse that file — check the column format."); }
+  };
+  r.readAsText(f);
+}
+
+/* ============================== SETUP UI ============================== */
+function readSetupInputs(){
+  S.settings.budget = +$("#setBudget").value || 100;
+  S.settings.timer  = Math.max(5,+$("#setTimer").value||20);
+  S.settings.openBid = +$("#setOpenBid").value || 1;
+  S.settings.minBid = +$("#setMinBid").value || 1;
+  S.settings.minPrice = +$("#setMinPrice").value || 0;
+  S.settings.tiers = [+$("#tT1").value||7.5, +$("#tT2").value||5.5];
+  S.settings.quota = {GK:+$("#qGK").value||2, DEF:+$("#qDEF").value||5, MID:+$("#qMID").value||5, FWD:+$("#qFWD").value||3};
+  S.settings.targetPool = Math.max(150,+$("#setTarget").value||200);
+  S.settings.guaranteeMin = +$("#setGuarantee").value||6.0;
+  if($("#setEarlyPoints")) S.settings.earlyPoints = Math.max(0,+$("#setEarlyPoints").value||0);
+  S.settings.sound = $("#setSound").checked;
+  S.participants.forEach((m,i)=>{ if(m) m.name = FIXED_MANAGER_NAMES[i] || m.name; });
+  save();
+}
+function renderSetup(){
+  $("#setBudget").value=S.settings.budget; $("#setTimer").value=S.settings.timer; $("#setOpenBid").value=S.settings.openBid; $("#setMinBid").value=S.settings.minBid;
+  $("#setMinPrice").value=S.settings.minPrice;
+  [$("#tT1").value,$("#tT2").value]=S.settings.tiers;
+  $("#qGK").value=S.settings.quota.GK; $("#qDEF").value=S.settings.quota.DEF; $("#qMID").value=S.settings.quota.MID; $("#qFWD").value=S.settings.quota.FWD;
+  $("#setTarget").value=S.settings.targetPool||200;
+  $("#setGuarantee").value=S.settings.guaranteeMin||6.0;
+  if($("#setEarlyPoints")) $("#setEarlyPoints").value=S.settings.earlyPoints??6;
+  $("#setSound").checked=S.settings.sound;
+  $("#pnames").innerHTML = S.participants.map((p,i)=>`
+    <div class="pname"><span class="mono muted small" style="width:20px">${i+1}</span>
+      <div style="flex:1;font-weight:700">${esc(FIXED_MANAGER_NAMES[i])}</div>
+      <span class="muted small">Fixed manager</span></div>`).join("");
+  if(S.rawLoaded){
+    const byT = [1,2,3].map(t=>S.players.filter(p=>p.tier===t).length);
+    const byP = POS.map(ps=>ps+" "+S.players.filter(p=>p.pos===ps).length).join(" · ");
+    const syncT=S.loadedAt?new Date(S.loadedAt).toLocaleString():"";
+    const audit=S.poolAudit||{};
+    const earlyProtected=audit.earlyProtected??S.players.filter(p=>p.earlyProtected).length;
+    $("#loadedInfo").innerHTML = `<div class="loaded-badge">✓ ${S.players.length} players loaded
+      <span class="muted" style="font-weight:500">T1 ${byT[0]} · T2 ${byT[1]} · T3 ${byT[2]} &nbsp;|&nbsp; ${byP}${syncT?` &nbsp;|&nbsp; synced ${syncT}`:""} · ${earlyProtected} early-season protected</span></div>`;
+  } else $("#loadedInfo").innerHTML = "";
+}
+
+/* ============================== FAIR QUEUE ============================== */
+/* Stratified jittered shuffle: each tier's players receive evenly spread
+   random positions in [0,1), so every stretch of the auction contains a
+   proportional mix of all tiers. Order is never displayed. */
+function buildQueue(){
+  const avail = S.players.filter(p=>p.status==="available");
+  const target = Math.min(S.settings.targetPool || 200, avail.length);
+
+  const entries = [];
+
+  for(let t=1;t<=3;t++){
+    const grp = avail.filter(p=>p.tier===t);
+
+    // shuffle within tier (Fisher-Yates, crypto randomness)
+    for(let i=grp.length-1;i>0;i--){
+      const j=Math.floor(rand()*(i+1));
+      [grp[i],grp[j]]=[grp[j],grp[i]];
+    }
+
+    grp.forEach((p,i)=>{
+      entries.push({
+        id:p.id,
+        key:(i + rand())/grp.length + rand()*1e-9
+      });
+    });
+  }
+
+  // Randomised ordering across tiers
+  entries.sort((a,b)=>a.key-b.key);
+
+  // Respect Target pool size
+  const selected = entries.slice(0, target);
+
+  S.queue = selected.map(e=>e.id);
+  S.qIndex = 0;
+}
+function rand(){ const a=new Uint32Array(1); crypto.getRandomValues(a); return a[0]/2**32; }
+
+/* ============================== AUCTION ENGINE ============================== */
+let timerH=null, timeLeft=0, paused=false;
+
+function startAuction(){
+  readSetupInputs();
+  if(!S.rawLoaded){ toast("Load players first (step 1)."); return; }
+  const need = S.participants.length * Object.values(S.settings.quota).reduce((a,b)=>a+b,0);
+  if(S.players.filter(p=>p.status==="available").length < need){ toast(`Pool too small: ${need} players needed to fill every squad. Lower the min price.`); return; }
+  if(!S.started){
+    S.participants.forEach(p=>{p.budget=S.settings.budget; p.spent=0;});
+    S.started = true;
+  }
+  buildQueue();
+  nextLot();
+  switchView("auction");
+  save();
+}
+
+function slotsLeft(part){
+  const q=S.settings.quota, owned=S.players.filter(p=>p.ownerId===part.id);
+  return Object.values(q).reduce((a,b)=>a+b,0) - owned.length;
+}
+function quotaRoom(part,pos){
+  const owned=S.players.filter(p=>p.ownerId===part.id && p.pos===pos).length;
+  return S.settings.quota[pos]-owned;
+}
+
+function subPlayerId(managerId,pos){ return S.subs?.[managerId]?.[pos] || null; }
+function isSubPlayer(pid){ return S.participants.some(m=>SUB_POS.some(pos=>subPlayerId(m.id,pos)===pid)); }
+function subUsed(managerId,pid){ return S.subHistory.some(x=>x.managerId===managerId && x.inId===pid); }
+function activePlayerIds(managerId){
+  const mine=S.players.filter(p=>p.ownerId===managerId);
+  const out=new Set(S.subHistory.filter(x=>x.managerId===managerId).map(x=>x.outId));
+  const inSet=new Set(S.subHistory.filter(x=>x.managerId===managerId).map(x=>x.inId));
+  return mine.filter(p=>!out.has(p.id) || inSet.has(p.id)).map(p=>p.id);
+}
+function substitutionCount(managerId){ return S.subHistory.filter(x=>x.managerId===managerId).length; }
+function activePlayerIdsAtStart(managerId){
+  return S.players.filter(p=>p.ownerId===managerId && !isSubPlayer(p.id)).map(p=>p.id);
+}
+function makeSubstitution(managerId,outId,inId){
+  const m=partById(managerId), out=pById(outId), incoming=pById(inId);
+  if(!m||!out||!incoming){ toast("Select a valid player to sub out and a substitute to bring in."); return; }
+  if(substitutionCount(managerId)>=3){ toast(`${m.name} has already used all 3 substitutions.`); return; }
+  if(out.ownerId!==managerId || incoming.ownerId!==managerId){ toast("Both players must belong to the same manager."); return; }
+  if(out.pos!==incoming.pos){ toast("Substitution must be position-for-position."); return; }
+  if(!isSubPlayer(incoming.id) || subUsed(managerId,incoming.id)){ toast("That substitute is not available for use."); return; }
+  if(isSubPlayer(out.id)){ toast("You can only sub out an active starting player."); return; }
+  if(S.subHistory.some(x=>x.managerId===managerId && x.outId===out.id)){ toast(`${out.name} has already been subbed out.`); return; }
+  S.subHistory.push({managerId,outId,inId,ts:Date.now()});
+  S.board=null; save(); renderSquads();
+  toast(`Substitution recorded: ${out.name} → ${incoming.name}.`);
+}
+function maxBid(part){
+  // must keep the opening bid (£1 by default) in reserve for every OTHER slot
+  // still to fill — so on your final slot you can spend your entire balance
+  return +(part.budget - Math.max(0, slotsLeft(part)-1)*S.settings.openBid).toFixed(1);
+}
+function eligible(part,player){
+  return slotsLeft(part)>0 && quotaRoom(part,player.pos)>0 && maxBid(part) >= S.settings.openBid;
+}
+
+function nextLot(){
+  clearInterval(timerH); S.onBlock=null;
+  // find next id in queue that is still available & someone could still need
+  while(S.qIndex < S.queue.length){
+    const p = pById(S.queue[S.qIndex]);
+    if(p && p.status==="available"){
+      // skip position if nobody has quota room for it
+      if(S.participants.some(m=>eligible(m,p))){ break; }
+      S.qIndex++; continue;
+    }
+    S.qIndex++;
+  }
+  if(S.qIndex >= S.queue.length || S.participants.every(m=>slotsLeft(m)===0)){
+    S.onBlock=null; save(); renderAuction(); return;
+  }
+  const p = pById(S.queue[S.qIndex]);
+  S.onBlock = {pid:p.id, bid:0, bidderId:null};
+  timeLeft = S.settings.timer; paused=false;
+  timerH = setInterval(tick, 1000);
+  save(); renderAuction();
+}
+function tick(){
+  if(paused) return;
+  timeLeft--;
+  if(timeLeft===5) sndOnce();
+  if(timeLeft===2) sndTwice();
+  if(timeLeft<=0){ timeLeft=0; clearInterval(timerH); sndSold(); renderTimer(); return; }
+  renderTimer();
+}
+function selectWinner(id){
+  const ob=S.onBlock; if(!ob) return;
+  const p=pById(ob.pid), m=partById(id);
+  if(!eligible(m,p)){ toast(`${m.name} can't take this player (quota full or out of budget).`); return; }
+  ob.bidderId = (ob.bidderId===id) ? null : id;   // tap again to unselect
+  if(ob.bidderId && !ob.bid) ob.bid = S.settings.openBid;
+  if(ob.bidderId) ob.bid = Math.min(ob.bid, maxBid(m));
+  sndBid(); save(); renderAuction();
+}
+function setPrice(v){
+  const ob=S.onBlock; if(!ob) return;
+  v = Math.max(S.settings.openBid, +(+v).toFixed(1));
+  const w = ob.bidderId ? partById(ob.bidderId) : null;
+  if(w && v>maxBid(w)){ toast(`${w.name} can only pay up to ${fmt(maxBid(w))} — they must keep ${fmt(S.settings.openBid)} for each other unfilled slot.`); v=maxBid(w); }
+  ob.bid = v; save(); renderAuction();
+}
+function hammer(){
+  const ob=S.onBlock; if(!ob) return;
+  const p=pById(ob.pid);
+  if(ob.bidderId){
+    const m=partById(ob.bidderId);
+    if(ob.bid<S.settings.openBid || ob.bid>maxBid(m)){ toast(`Price must be between ${fmt(S.settings.openBid)} and ${fmt(maxBid(m))} for ${m.name}.`); return; }
+    p.status="sold"; p.ownerId=m.id; p.paid=ob.bid;
+    m.budget=+(m.budget-ob.bid).toFixed(1); m.spent=+(m.spent+ob.bid).toFixed(1);
+    S.log.unshift({playerId:p.id,name:p.name,buyer:m.name,buyerId:m.id,amount:ob.bid,type:"sold",ts:Date.now()});
+    sndSold(); toast(`SOLD! ${p.name} → ${m.name} for ${fmt(ob.bid)} 🔨`);
+    $("#rostrum").classList.add("soldflash"); setTimeout(()=>$("#rostrum").classList.remove("soldflash"),700);
+  }else{
+    // unsold → recycle to a random later point in the remaining queue
+    S.log.unshift({playerId:p.id,name:p.name,buyer:"—",amount:0,type:"passed",ts:Date.now()});
+    const rest=S.queue.length - S.qIndex - 1;
+    const insertAt = S.qIndex + 1 + Math.floor(rand()*Math.max(1,rest)) ;
+    S.queue.splice(S.qIndex,1);
+    S.queue.splice(Math.min(insertAt,S.queue.length),0,p.id);
+    toast(`${p.name} passed — returns to the pool at a random later lot.`);
+    S.qIndex--; // compensate, nextLot advances
+  }
+  S.qIndex++;
+  nextLot();
+}
+let editingId=null, sqEdit=null;
+/* Manual squad assignment — used after the auction (preference picks) or for corrections.
+   Validations: player must be unowned (no double ownership), position must match the slot,
+   and the price must fit the manager's budget while reserving the opening bid for every
+   other unfilled slot. All changes flow through the same state, so the auction screen,
+   pool, remaining list, hammer log and leaderboard all stay in sync. */
+function manualAssign(){
+  const ed=sqEdit; if(!ed) return;
+  const m=partById(ed.mId);
+  const nameV=$("#sqName").value.trim();
+  const price=+(+$("#sqPrice").value).toFixed(1);
+  if(!nameV){ toast("Pick a player first."); return; }
+  if(ed.sub){
+    if(slotsLeft(m)>0){ toast(`${m.name} must complete the 15-player starting squad before buying substitutes.`); return; }
+    if(!SUB_POS.includes(ed.pos)){ toast("Substitutes are available only for DEF, MID and FWD."); return; }
+    const currentId=subPlayerId(m.id,ed.pos);
+    const candsSub=S.players.filter(x=>x.pos===ed.pos && (x.status==="available"||x.id===ed.pid));
+    let candSub=candsSub.find(x=>(x.name+" · "+x.team)===nameV) || null;
+    if(!candSub){ const byName=candsSub.filter(x=>x.name.toLowerCase()===nameV.toLowerCase()); if(byName.length===1) candSub=byName[0]; }
+    if(!candSub){ toast("No available substitute matches that name — pick one from the suggestions."); return; }
+    if(S.onBlock && S.onBlock.pid===candSub.id){ toast(`${candSub.name} is on the block right now — sell them from the Auction screen instead.`); return; }
+    const oldSub=currentId?pById(currentId):null;
+    if(oldSub && oldSub.id!==candSub.id && subUsed(m.id,oldSub.id)){ toast("A substitute that has already been used cannot be replaced."); return; }
+    const effBudget=+(m.budget+(oldSub?oldSub.paid:0)).toFixed(1);
+    if(!(price>=S.settings.openBid)){ toast(`Price must be at least ${fmt(S.settings.openBid)}.`); return; }
+    if(price>effBudget){ toast(`Too expensive: ${m.name} can pay at most ${fmt(effBudget)}.`); return; }
+    if(oldSub && oldSub.id!==candSub.id){
+      m.budget=+(m.budget+oldSub.paid).toFixed(1); m.spent=+(m.spent-oldSub.paid).toFixed(1);
+      oldSub.status="available"; oldSub.ownerId=null; oldSub.paid=0;
+      const le=S.log.find(l=>l.type==="sold"&&l.playerId===oldSub.id&&l.buyerId===m.id); if(le) S.log.splice(S.log.indexOf(le),1);
+    }
+    if(oldSub && oldSub.id===candSub.id){
+      m.budget=+(m.budget+oldSub.paid-price).toFixed(1); m.spent=+(m.spent-oldSub.paid+price).toFixed(1);
+      candSub.paid=price;
+      const le=S.log.find(l=>l.type==="sold"&&l.playerId===candSub.id&&l.buyerId===m.id); if(le) le.amount=price;
+    } else {
+      candSub.status="sold"; candSub.ownerId=m.id; candSub.paid=price;
+      m.budget=+(m.budget-price).toFixed(1); m.spent=+(m.spent+price).toFixed(1);
+      S.log.unshift({playerId:candSub.id,name:candSub.name,buyer:m.name,buyerId:m.id,amount:price,type:"sold",ts:Date.now()});
+    }
+    S.subs[m.id]=Object.assign({DEF:null,MID:null,FWD:null},S.subs[m.id]||{});
+    S.subs[m.id][ed.pos]=candSub.id;
+    sqEdit=null; S.board=null; save(); toast(`${candSub.name} added as ${ed.pos} substitute for ${m.name} ✓`); renderView(S.view); return;
+  }
+  const cands=S.players.filter(x=>x.pos===ed.pos && (x.status==="available"||x.id===ed.pid));
+  let cand=cands.find(x=>(x.name+" · "+x.team)===nameV) || null;
+  if(!cand){ const byName=cands.filter(x=>x.name.toLowerCase()===nameV.toLowerCase()); if(byName.length===1) cand=byName[0]; }
+  if(!cand){
+    const owned=S.players.find(x=>(x.name+" · "+x.team)===nameV || x.name.toLowerCase()===nameV.toLowerCase());
+    if(owned && owned.ownerId!=null && owned.id!==ed.pid){ toast(`${owned.name} is already in ${partById(owned.ownerId).name}'s squad.`); return; }
+    if(owned && owned.pos!==ed.pos){ toast(`${owned.name} is a ${owned.pos} — this slot is for a ${ed.pos}.`); return; }
+    toast("No available player matches that name — pick one from the suggestions."); return;
+  }
+  if(S.onBlock && S.onBlock.pid===cand.id){ toast(`${cand.name} is on the block right now — sell them from the Auction screen instead.`); return; }
+  const old = ed.pid ? pById(ed.pid) : null;
+  const effBudget = +(m.budget + (old?old.paid:0)).toFixed(1);
+  const effSlotsLeft = slotsLeft(m) + (old?1:0);
+  const maxAllowed = +(effBudget - Math.max(0,effSlotsLeft-1)*S.settings.openBid).toFixed(1);
+  if(!(price>=S.settings.openBid)){ toast(`Price must be at least ${fmt(S.settings.openBid)}.`); return; }
+  if(price>maxAllowed){ toast(`Too expensive: ${m.name} can pay at most ${fmt(maxAllowed)} here (budget cap, keeping ${fmt(S.settings.openBid)} per other unfilled slot).`); return; }
+  // release the old occupant of this slot, if any
+  if(old && old.id!==cand.id){
+    m.budget=+(m.budget+old.paid).toFixed(1); m.spent=+(m.spent-old.paid).toFixed(1);
+    old.status="available"; old.ownerId=null; old.paid=0;
+    const le=S.log.find(l=>l.type==="sold"&&l.playerId===old.id); if(le) S.log.splice(S.log.indexOf(le),1);
+    if(!S.queue.includes(old.id)){
+      const rest=Math.max(1,S.queue.length-S.qIndex);
+      S.queue.splice(Math.min(S.queue.length,S.qIndex+1+Math.floor(rand()*rest)),0,old.id);
+    }
+  }
+  if(old && old.id===cand.id){ // price-only edit
+    m.budget=+(m.budget+old.paid-price).toFixed(1); m.spent=+(m.spent-old.paid+price).toFixed(1);
+    cand.paid=price;
+    const le=S.log.find(l=>l.type==="sold"&&l.playerId===cand.id); if(le) le.amount=price;
+  } else {
+    cand.status="sold"; cand.ownerId=m.id; cand.paid=price;
+    m.budget=+(m.budget-price).toFixed(1); m.spent=+(m.spent+price).toFixed(1);
+    S.log.unshift({playerId:cand.id,name:cand.name,buyer:m.name,buyerId:m.id,amount:price,type:"sold",ts:Date.now()});
+  }
+  sqEdit=null; save();
+  toast(`${cand.name} → ${m.name} for ${fmt(price)} ✓`);
+  renderView(S.view);
+}
+function revertSale(pid){
+  const entry=S.log.find(l=>l.type==="sold"&&l.playerId===pid);
+  if(!entry){ toast("Sale not found."); return; }
+  const p=pById(pid), m=partById(entry.buyerId);
+  if(isSubPlayer(pid)){
+    if(S.subHistory.some(x=>x.inId===pid)){ toast("That substitute has already been used in a substitution and cannot be reverted."); return; }
+    for(const pos of SUB_POS) if(subPlayerId(m.id,pos)===pid) S.subs[m.id][pos]=null;
+  }
+  p.status="available"; p.ownerId=null; p.paid=0;
+  m.budget=+(m.budget+entry.amount).toFixed(1); m.spent=+(m.spent-entry.amount).toFixed(1);
+  S.log.splice(S.log.indexOf(entry),1);
+  // back into the sealed queue at a random later point
+  const rest=Math.max(1,S.queue.length-S.qIndex);
+  const at=Math.min(S.queue.length, S.qIndex+1+Math.floor(rand()*rest));
+  if(!S.queue.includes(pid)) S.queue.splice(at,0,pid);
+  toast(`Reverted: ${p.name} is back in the pool, ${m.name} refunded ${fmt(entry.amount)}.`);
+  save();
+  if(S.started && !S.onBlock) nextLot();
+  renderView(S.view);
+}
+function undoPass(pid){
+  const entry=S.log.find(l=>l.type==="passed"&&l.playerId===pid);
+  const p=pById(pid);
+  if(!entry||!p){ toast("Pass entry not found."); return; }
+  if(p.status!=="available"){ toast(`${p.name} has since been sold — use ✎ or ↩ on the sale instead.`); return; }
+  S.log.splice(S.log.indexOf(entry),1);
+  // pull the player out of wherever it sits in the queue and slot it in as the next lot
+  const cur=S.queue.indexOf(pid); if(cur>-1) S.queue.splice(cur,1);
+  const at=S.onBlock ? S.qIndex+1 : S.qIndex;
+  S.queue.splice(Math.min(at,S.queue.length),0,pid);
+  toast(`${p.name} is back — coming up ${S.onBlock?"as the next lot":"now"}.`);
+  save();
+  if(S.started && !S.onBlock) nextLot(); else renderAuction();
+}
+function saveEdit(pid){
+  const entry=S.log.find(l=>l.type==="sold"&&l.playerId===pid);
+  if(!entry) return;
+  const p=pById(pid), oldM=partById(entry.buyerId);
+  const newId=+$("#editOwner").value, price=+(+$("#editPrice").value).toFixed(1), newM=partById(newId);
+  if(!(price>0)){ toast("Enter a valid price."); return; }
+  // provisionally refund old owner
+  oldM.budget=+(oldM.budget+entry.amount).toFixed(1); oldM.spent=+(oldM.spent-entry.amount).toFixed(1);
+  const others=S.players.filter(x=>x.ownerId===newM.id && x.pos===p.pos && x.id!==p.id).length;
+  if(others>=S.settings.quota[p.pos]){
+    oldM.budget=+(oldM.budget-entry.amount).toFixed(1); oldM.spent=+(oldM.spent+entry.amount).toFixed(1);
+    toast(`${newM.name} already has all ${S.settings.quota[p.pos]} ${p.pos} slots filled.`); return;
+  }
+  if(newM.budget<price){
+    oldM.budget=+(oldM.budget-entry.amount).toFixed(1); oldM.spent=+(oldM.spent+entry.amount).toFixed(1);
+    toast(`${newM.name} only has ${fmt(newM.budget)} left.`); return;
+  }
+  newM.budget=+(newM.budget-price).toFixed(1); newM.spent=+(newM.spent+price).toFixed(1);
+  p.ownerId=newM.id; p.paid=price;
+  entry.buyerId=newM.id; entry.buyer=newM.name; entry.amount=price;
+  editingId=null; toast(`Updated: ${p.name} → ${newM.name} for ${fmt(price)}.`);
+  save(); renderAuction();
+}
+function undoLast(){
+  const last=S.log.find(l=>l.type==="sold");
+  if(!last){ toast("Nothing to undo."); return; }
+  const p=pById(last.playerId), m=partById(last.buyerId);
+  p.status="available"; p.ownerId=null; p.paid=0;
+  m.budget=+(m.budget+last.amount).toFixed(1); m.spent=+(m.spent-last.amount).toFixed(1);
+  S.log.splice(S.log.indexOf(last),1);
+  // put player back near the front of the remaining queue
+  S.queue.splice(S.qIndex,0,p.id);
+  toast(`Undone: ${p.name} returned, ${m.name} refunded ${fmt(last.amount)}.`);
+  save(); nextLot();
+}
+
+/* ============================== RENDER ============================== */
+function switchView(v){
+  if(!document.getElementById("v-"+v)) v="setup";
+  S.view=v; save();
+  if(location.hash!=="#"+v) history.replaceState(null,"","#"+v);
+  document.querySelectorAll(".view").forEach(el=>el.classList.remove("on"));
+  $("#v-"+v).classList.add("on");
+  document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===v));
+  renderView(v);
+}
+function renderView(v){
+  if(v==="setup") renderSetup();
+  if(v==="auction") renderAuction();
+  if(v==="players") renderPool();
+  if(v==="remaining") renderRemaining();
+  if(v==="squads") renderSquads();
+  if(v==="profiles") renderProfiles();
+}
+/* Refresh a tab: re-read shared state from this browser's storage, re-render.
+   The leaderboard refresh re-fetches live points from the FPL API. */
+function refreshView(v){
+  const fresh=load();
+  if(fresh){ S=fresh; normalizeIds(); document.documentElement.dataset.theme=S.theme; }
+  if(v==="board"){ renderBoard(); fetchScores(); } else renderView(v);
+  toast("Refreshed ✓");
+}
+
+function renderTimer(){
+  const el=$("#ringSec"); if(!el) return;
+  el.textContent = paused ? "❚❚" : timeLeft;
+  const circ=2*Math.PI*52, frac=Math.max(0,timeLeft)/S.settings.timer;
+  const ring=$("#ringFg"); if(ring){ ring.style.strokeDashoffset = circ*(1-frac);
+    ring.style.stroke = timeLeft<=2?"var(--danger)":timeLeft<=5?"var(--amber)":"var(--turf)"; }
+  const gs=$("#gavelState");
+  if(gs){ gs.className="gavel-state"+(timeLeft<=0?" twice":timeLeft<=2?" twice":timeLeft<=5?" once":"");
+    gs.textContent = paused?"paused":timeLeft<=0?"TIME — RECORD THE RESULT":timeLeft<=2?"GOING TWICE…":timeLeft<=5?"GOING ONCE…":"bidding in the room"; }
+}
+
+function renderAuction(){
+  // ------ rostrum ------
+  const R=$("#rostrumInner");
+  if(!S.started){ R.innerHTML=`<div class="empty"><div class="big">Auction not started</div>Finish setup and hit “Build queue & start auction”.</div>`; }
+  else if(!S.onBlock){
+    R.innerHTML=`<div class="empty" style="padding:70px 20px"><div class="big">🏁 That's the lot — auction complete!</div>Every squad is filled (or no eligible bidders remain). Check the Squads tab for the final rosters, then take it to the pitch.</div>`;
+  } else {
+    const p=pById(S.onBlock.pid), ob=S.onBlock;
+    const circ=2*Math.PI*52;
+    const w = ob.bidderId ? partById(ob.bidderId) : null;
+    const priceOk = w && ob.bid>=S.settings.openBid && ob.bid<=maxBid(w);
+    R.innerHTML = `
+      <div class="eyebrow">Lot ${S.log.filter(l=>l.type==="sold").length+1} · on the block</div>
+      <div class="player-photo-wrap">${p.photo?`<img class="player-photo" src="https://resources.premierleague.com/premierleague25/photos/players/110x140/p${encodeURIComponent(String(p.photo).replace(/\.jpg$/i,"").replace(/\.png$/i,""))}.png" alt="${esc(p.name)}" loading="eager" onerror="this.onerror=null;this.src='https://resources.premierleague.com/premierleague/photos/players/250x250/p${encodeURIComponent(String(p.photo).replace(/\.jpg$/i,"").replace(/\.png$/i,""))}.png';" />`:`<div class="player-photo-fallback">${esc((p.name||"?").slice(0,1).toUpperCase())}</div>`}</div>
+      <div class="onblock-name">${esc(p.name)}</div>
+      <div class="onblock-meta"><span>${esc(p.team)}</span><span class="pos-${p.pos}">${p.pos}</span>
+        <span class="pill tier-${p.tier}">TIER ${p.tier}</span><span class="pricebase">FPL list ${fmt(p.price)} · opens at ${fmt(S.settings.openBid)}</span></div>
+      <div class="small muted" style="font-family:'Chakra Petch'">${S.statsLabel||"25/26"}: <b style="color:var(--ink)">${p.pts??"—"} pts</b> · ${p.ppg!=null?(+p.ppg).toFixed(1):"—"} per game</div>
+      <div class="ring"><svg width="118" height="118"><circle cx="59" cy="59" r="52" fill="none" stroke="var(--line)" stroke-width="7"/>
+        <circle id="ringFg" cx="59" cy="59" r="52" fill="none" stroke="var(--turf)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="0"/></svg>
+        <div class="t"><div class="sec" id="ringSec">${timeLeft}</div><div class="lbl">seconds</div></div></div>
+      <div class="gavel-state" id="gavelState"></div>
+      <div class="small muted" style="max-width:430px">Auction this player out loud in the room. When the bidding ends, record the result below — no need to track individual raises.</div>
+      <div class="secthead">1 · WHO WON THE BID</div>
+      <div class="bidders">${S.participants.map(m=>{
+        const el = eligible(m,p), sel = ob.bidderId===m.id;
+        const pr=profileFor(m); const av=pr.photo?`<img src="${esc(pr.photo)}" alt="${esc(m.name)}" />`:esc(managerInitials(m.name));
+        return `<button class="bchip auction-manager-chip${sel?" lead":""}" data-win="${m.id}" ${el?"":"disabled"} title="${el?"":"quota full / out of budget"}">
+          <span class="auction-manager-avatar">${av}</span><span class="auction-manager-meta"><span class="auction-manager-team">${esc(pr.teamName||"Team name not set")}</span></span><span class="mx">max ${fmt(maxBid(m))}</span></button>`;}).join("") }
+      </div>
+      ${w?(()=>{const pr=profileFor(w);const av=pr.photo?`<img src="${esc(pr.photo)}" alt="${esc(w.name)}" />`:esc(managerInitials(w.name));return `<div class="auction-winner-card"><div class="auction-winner-avatar">${av}</div><div><div class="eyebrow">Current winning team</div><b>${esc(pr.teamName||"Team name not set")}</b><div class="auction-winner-team">Manager: ${esc(w.name)}</div></div></div>`})():""}
+      <div class="secthead">2 · FINAL PRICE</div>
+      <div class="pricectl">
+        <button class="stp" data-step="-1">−</button>
+        <input type="number" id="finalPrice" step="${S.settings.minBid}" min="${S.settings.openBid}" value="${ob.bid||S.settings.openBid}">
+        <button class="stp" data-step="1">+</button>
+        ${[2,5,10,15,20,30].map(v=>`<button class="qk" data-setp="${v}">£${v}</button>`).join("")}
+      </div>
+      <div class="maxhint">${w?`${esc(w.name)} can pay up to <b>${fmt(maxBid(w))}</b>`:"select the winner first"}</div>
+      <div class="rostrum-actions">
+        <button class="btn gold" id="btnHammer" ${priceOk?"":"disabled"}>🔨 Sold${w?` to ${esc(w.name)}`:""} for ${fmt(ob.bid||S.settings.openBid)}</button>
+        <button class="btn ghost" id="btnSkip" title="No sale — recycles to a random later lot">Pass lot</button>
+        <button class="btn ghost" id="btnPause">${paused?"▶ Resume":"❚❚ Pause"}</button>
+        <button class="btn ghost" id="btnRestartT" title="Restart the countdown">⏱ ${S.settings.timer}s</button>
+      </div>`;
+    renderTimer();
+  }
+  // ------ tier bars ------
+  const avail=S.players.filter(p=>p.status==="available");
+  $("#poolCount").textContent = avail.length + " left";
+  const cols={1:"var(--t1)",2:"var(--t2)",3:"var(--t3)"};
+  $("#tierBars").innerHTML=[1,2,3].map(t=>{
+    const tot=S.players.filter(p=>p.tier===t).length, left=avail.filter(p=>p.tier===t).length;
+    return `<div class="tbar"><span class="pill tier-${t}">T${t}</span>
+      <div class="track"><div class="fill" style="width:${tot?left/tot*100:0}%;background:${cols[t]}"></div></div>
+      <span class="mono">${left}/${tot}</span></div>`;}).join("");
+  // ------ log ------
+  $("#logList").innerHTML = S.log.slice(0,60).map(l=>{
+    if(l.type!=="sold") return `<div class="li muted"><span>↻ ${esc(l.name)} passed</span>
+      <span class="logbtns"><button data-unpass="${l.playerId}" title="Undo the pass — bring this player back up next">↩</button></span></div>`;
+    if(editingId===l.playerId){
+      const pl=pById(l.playerId);
+      return `<div class="editrow"><b class="small">${esc(l.name)} <span class="muted">(${pl?pl.pos:""})</span></b>
+        <div class="er">→ <select id="editOwner">${S.participants.map(m=>`<option value="${m.id}"${m.id===l.buyerId?" selected":""}>${esc(m.name)}</option>`).join("")}</select>
+        £<input type="number" id="editPrice" step="0.5" value="${l.amount}">
+        <button data-esave="${l.playerId}" title="Save">✓</button><button data-ecancel="1" title="Cancel">✕</button></div></div>`;
+    }
+    return `<div class="li"><span>🔨 <b>${esc(l.name)}</b> → ${esc(l.buyer)} <span class="mono" style="color:var(--turf)">${fmt(l.amount)}</span></span>
+      <span class="logbtns"><button data-edit="${l.playerId}" title="Edit winner or price">✎</button><button data-revert="${l.playerId}" title="Undo this sale — player returns to the pool">↩</button></span></div>`;
+  }).join("") || `<div class="muted small">No lots hammered yet. Every sale can be edited (✎) or reverted (↩) here at any time.</div>`;
+  // ------ squads mini ------
+  $("#squadMini").innerHTML = S.participants.map(m=>{
+    const total=Object.values(S.settings.quota).reduce((a,b)=>a+b,0), left=slotsLeft(m);
+    const lead = S.onBlock && S.onBlock.bidderId===m.id;
+    return `<div class="sqrow${lead?" lead":""}"><div class="top"><span>${esc(m.name)}</span><span class="bal">${fmt(m.budget)}</span></div>
+      <div class="bot"><span>${total-left}/${total} players</span><span>needs ${left} · max ${fmt(maxBid(m))}</span></div>
+      <div class="needbar"><i style="width:${(total-left)/total*100}%"></i></div></div>`;}).join("");
+}
+
+let sortKey="price", sortDir=-1;
+function renderPool(){
+  // (re)populate club filter, preserving selection
+  const clubSel=$("#fClub"), prevClub=clubSel.value;
+  const clubs=[...new Set(S.players.map(p=>p.team))].sort();
+  clubSel.innerHTML='<option value="">All clubs</option>'+clubs.map(c=>`<option${c===prevClub?" selected":""}>${esc(c)}</option>`).join("");
+  const ownSel=$("#fOwner"), prevOwn=ownSel.value;
+  ownSel.innerHTML='<option value="">Won by: anyone</option>'+S.participants.map(m=>`<option value="${m.id}"${String(m.id)===prevOwn?" selected":""}>${esc(m.name)}</option>`).join("");
+  const q=$("#fSearch").value.toLowerCase(), pos=$("#fPos").value, club=clubSel.value, owner=ownSel.value, tier=$("#fTier").value, stat=$("#fStatus").value;
+  let rows=S.players.filter(p=>
+    (!q || p.name.toLowerCase().includes(q) || (p.web||"").toLowerCase().includes(q) || p.team.toLowerCase().includes(q)) &&
+    (!pos || p.pos===pos) && (!club || p.team===club) && (!owner || p.ownerId==+owner) && (!tier || p.tier==+tier) && (owner ? true : (!stat || p.status===stat)));
+  rows.sort((a,b)=>{const va=a[sortKey],vb=b[sortKey];return (va>vb?1:va<vb?-1:0)*sortDir;});
+  $("#fCount").textContent = rows.length + " players";
+  const th=$("#thPts"); if(th) th.textContent=(S.statsLabel||"25/26")+" pts";
+  $("#poolTable tbody").innerHTML = rows.slice(0,600).map(p=>`
+    <tr><td><b>${esc(p.name)}</b></td><td>${esc(p.team)}</td><td class="pos-${p.pos}"><b>${p.pos}</b></td>
+    <td class="mono">${fmt(p.price)}</td><td><span class="pill tier-${p.tier}">T${p.tier}</span></td>
+    <td class="mono">${p.pts??"—"}</td><td class="mono">${p.ppg!=null?(+p.ppg).toFixed(1):"—"}</td>
+    <td>${p.status==="sold"?`<span class="small">→ ${esc(partById(p.ownerId)?.name||"?")} <span class="mono muted">(${fmt(p.paid)})</span></span>`:'<span class="muted small">available</span>'}</td></tr>`).join("");
+}
+
+let rSortKey="price", rSortDir=-1;
+function renderRemaining(){
+  const clubSel=$("#rClub"), prevClub=clubSel.value;
+  const clubs=[...new Set(S.players.map(p=>p.team))].sort();
+  clubSel.innerHTML='<option value="">All clubs</option>'+clubs.map(c=>`<option${c===prevClub?" selected":""}>${esc(c)}</option>`).join("");
+  const q=$("#rSearch").value.toLowerCase(), pos=$("#rPos").value, club=clubSel.value, tier=$("#rTier").value;
+  let rows=S.players.filter(p=> p.status==="available" &&
+    (!q || p.name.toLowerCase().includes(q) || (p.web||"").toLowerCase().includes(q) || p.team.toLowerCase().includes(q)) &&
+    (!pos || p.pos===pos) && (!club || p.team===club) && (!tier || p.tier==+tier));
+  rows.sort((a,b)=>{const va=a[rSortKey],vb=b[rSortKey];return (va>vb?1:va<vb?-1:0)*rSortDir;});
+  $("#rCount").textContent = rows.length + " players still to be auctioned";
+  const th=$("#rthPts"); if(th) th.textContent=(S.statsLabel||"25/26")+" pts";
+  $("#remTable tbody").innerHTML = rows.slice(0,600).map(p=>`
+    <tr><td><b>${esc(p.name)}</b></td><td>${esc(p.team)}</td><td class="pos-${p.pos}"><b>${p.pos}</b></td>
+    <td class="mono">${fmt(p.price)}</td><td><span class="pill tier-${p.tier}">T${p.tier}</span></td>
+    <td class="mono">${p.pts??"—"}</td><td class="mono">${p.ppg!=null?(+p.ppg).toFixed(1):"—"}</td></tr>`).join("");
+}
+function renderSquads(){
+  const q=S.settings.quota;
+  const slots=[];
+  for(const ps of POS) for(let i=1;i<=q[ps];i++) slots.push({pos:ps,n:i});
+  const cols=S.participants.map(m=>{
+    const byPos={};
+    for(const ps of POS) byPos[ps]=S.players.filter(p=>p.ownerId===m.id&&p.pos===ps).sort((a,b)=>b.paid-a.paid);
+    return {m, byPos};
+  });
+  const totalSlots=Object.values(q).reduce((a,b)=>a+b,0);
+  let html=`<div class="small muted" style="margin-bottom:10px"><b>Starting squad:</b> 15 players (${q.GK} GK · ${q.DEF} DEF · ${q.MID} MID · ${q.FWD} FWD). Each manager may optionally buy <b>3 substitutes</b>: 1 DEF, 1 MID and 1 FWD. Substitutes do not score until used.</div>`;
+  html+=`<table class="xl"><thead><tr><th>Slot</th>${cols.map(c=>`<th>${esc(c.m.name)}</th>`).join("")}</tr></thead><tbody>`;
+  slots.forEach(sl=>{
+    html+=`<tr><td class="pos-${sl.pos}">${sl.pos} ${sl.n}</td>`;
+    for(const c of cols){
+      const p=c.byPos[sl.pos][sl.n-1];
+      const editingHere=sqEdit&&!sqEdit.sub&&sqEdit.mId===c.m.id&&sqEdit.pos===sl.pos&&sqEdit.n===sl.n;
+      if(editingHere){
+        const avail=S.players.filter(x=>x.pos===sl.pos&&(x.status==="available"||x.id===sqEdit.pid)).sort((a,b)=>b.price-a.price);
+        const cur=sqEdit.pid?pById(sqEdit.pid):null;
+        html+=`<td><div class="sqedit"><input id="sqName" list="dlAvail" placeholder="Type a player name…" value="${cur?esc(cur.name+" · "+cur.team):""}" autocomplete="off"><datalist id="dlAvail">${avail.slice(0,300).map(x=>`<option value="${esc(x.name)} · ${esc(x.team)}">${fmt(x.price)} list · T${x.tier}</option>`).join("")}</datalist><div class="row2">£<input id="sqPrice" type="number" step="0.5" min="${S.settings.openBid}" value="${cur?cur.paid:S.settings.openBid}"><button id="sqSave" title="Save">✓ Save</button><button id="sqCancel" title="Cancel">✕</button></div><div class="hint">${esc(c.m.name)} has ${fmt(c.m.budget+(cur?cur.paid:0))} usable</div></div></td>`;
+      } else if(p){
+        const inactive=S.subHistory.some(x=>x.managerId===c.m.id&&x.outId===p.id);
+        html+=`<td title="${esc(p.name)}"><b>${esc(shortName(p))}</b> <span class="muted small">${esc(p.team)}</span> <span class="pd">${fmt(p.paid)}</span>${inactive?` <span class="pill" style="background:var(--danger-soft);color:var(--danger)">SUBBED OUT</span>`:""}<span class="cellbtns"><button data-sqedit="${c.m.id}|${sl.pos}|${sl.n}|${p.id}" title="Edit player or price">✎</button><button data-sqdel="${p.id}" title="Remove — returns to pool, refunds ${esc(c.m.name)}">✕</button></span></td>`;
+      } else html+=`<td class="cell-empty"><button class="sqadd" data-sqadd="${c.m.id}|${sl.pos}|${sl.n}" title="Manually assign a player to ${esc(c.m.name)}">＋ add</button></td>`;
+    }
+    html+=`</tr>`;
+  });
+  const sum=(label,cls,fn)=>`<tr class="sumrow"><td>${label}</td>${cols.map(c=>`<td class="${cls}">${fn(c.m)}</td>`).join("")}</tr>`;
+  html+=sum("Spent","",m=>fmt(m.spent));
+  html+=sum("Balance","v-bal",m=>fmt(m.budget));
+  html+=sum("To fill","",m=>{const l=slotsLeft(m);return `${l} <span class="pd">(${totalSlots-l}/${totalSlots})</span>`;});
+  html+=sum("Max bid","v-max",m=>slotsLeft(m)>0?fmt(maxBid(m)):"—");
+  html+=`</tbody></table>`;
+
+  html+=`<div class="subsection"><div class="viewbar"><div><span class="eyebrow">Optional substitutes</span><div class="small muted">Buy up to three extra players after completing the 15-player starting squad.</div></div></div><div class="subgrid">`;
+  for(const c of cols){
+    const m=c.m; S.subs[m.id]=Object.assign({DEF:null,MID:null,FWD:null},S.subs[m.id]||{});
+    html+=`<div class="subcard"><div class="subhead"><b>${esc(m.name)}</b><span class="pill">${substitutionCount(m.id)}/3 subs used</span></div>`;
+    for(const pos of SUB_POS){
+      const pid=S.subs[m.id][pos], p=pid?pById(pid):null, used=p&&subUsed(m.id,pid);
+      const editing=sqEdit&&sqEdit.sub&&sqEdit.mId===m.id&&sqEdit.pos===pos;
+      if(editing){
+        const avail=S.players.filter(x=>x.pos===pos&&(x.status==="available"||x.id===pid)).sort((a,b)=>b.price-a.price);
+        html+=`<div class="subrow"><span class="pos-${pos}"><b>${pos} SUB</b></span><div class="sqedit"><input id="sqName" list="dlSub" placeholder="Type a ${pos}…" value="${p?esc(p.name+" · "+p.team):""}" autocomplete="off"><datalist id="dlSub">${avail.slice(0,300).map(x=>`<option value="${esc(x.name)} · ${esc(x.team)}">${fmt(x.price)} list · T${x.tier}</option>`).join("")}</datalist><div class="row2">£<input id="sqPrice" type="number" step="0.5" min="${S.settings.openBid}" value="${p?p.paid:S.settings.openBid}"><button id="sqSave" title="Save substitute">✓</button><button id="sqCancel" title="Cancel">✕</button></div></div></div>`;
+      } else if(p){
+        html+=`<div class="subrow"><span class="pos-${pos}"><b>${pos} SUB</b></span><span class="subplayer"><b>${esc(shortName(p))}</b> <span class="muted small">${esc(p.team)}</span> <span class="pd">${fmt(p.paid)}</span>${used?` <span class="pill" style="background:var(--turf-soft);color:var(--turf)">USED</span>`:""}</span><span class="cellbtns">${used?"":`<button data-sqedit-sub="${m.id}|${pos}|${p.id}" title="Edit substitute">✎</button><button data-sqdel-sub="${m.id}|${pos}|${p.id}" title="Remove substitute and refund">✕</button>`}</span></div>`;
+      } else html+=`<div class="subrow"><span class="pos-${pos}"><b>${pos} SUB</b></span><span class="muted small">Not purchased</span><span class="cellbtns"><button data-sqadd-sub="${m.id}|${pos}" title="Buy ${pos} substitute" ${slotsLeft(m)>0?"disabled":""}>＋ buy</button></span></div>`;
+    }
+    html+=`</div>`;
+  }
+  html+=`</div><div class="substitution-box"><div><span class="eyebrow">Admin substitution</span><div class="small muted">Position-for-position only. Maximum 3 substitutions per manager. The incoming player must be an unused substitute.</div></div><div class="subcontrols"><select id="subManager">${S.participants.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join("")}</select><select id="subOut"><option value="">Player to sub out…</option>${(()=>{const m=S.participants[0]; return activePlayerIdsAtStart(m.id).map(id=>{const p=pById(id);return p?`<option value="${p.id}">${esc(p.name)} · ${p.pos}</option>`:""}).join("")})()}</select><select id="subIn"><option value="">Substitute to bring in…</option></select><button class="btn" id="btnSubstitute">Make substitution</button></div><div id="subHint" class="small muted"></div></div>`;
+  $("#sqBoard").innerHTML=html;
+  updateSubControls();
+}
+function updateSubControls(){
+  const ms=$("#subManager"), out=$("#subOut"), inn=$("#subIn"); if(!ms||!out||!inn) return;
+  const m=partById(+ms.value); if(!m) return;
+  const active=activePlayerIdsAtStart(m.id).filter(id=>!S.subHistory.some(x=>x.managerId===m.id&&x.outId===id));
+  const prevOut=out.value; out.innerHTML='<option value="">Player to sub out…</option>'+active.map(id=>{const p=pById(id);return p?`<option value="${p.id}"${String(id)===prevOut?" selected":""}>${esc(p.name)} · ${p.pos}</option>`:""}).join("");
+  const outP=pById(out.value); const pos=outP?outP.pos:null;
+  const prevIn=inn.value; inn.innerHTML='<option value="">Substitute to bring in…</option>'+SUB_POS.filter(x=>!pos||x===pos).map(x=>{const pid=subPlayerId(m.id,x),p=pid?pById(pid):null;return p&&!subUsed(m.id,pid)?`<option value="${p.id}"${String(pid)===prevIn?" selected":""}>${esc(p.name)} · ${x}</option>`:""}).join("");
+  $("#subHint").textContent=`${m.name}: ${substitutionCount(m.id)}/3 substitutions used.`;
+}
+
+/* ============================== MANAGER PROFILES ============================== */
+function profileFor(m){
+  S.profiles=S.profiles||{};
+  S.profiles[m.id]=Object.assign({photo:"",teamName:"",history:{"2024/25":"","2025/26":""}},S.profiles[m.id]||{});
+  S.profiles[m.id].history=Object.assign({"2024/25":"","2025/26":""},S.profiles[m.id].history||{});
+  return S.profiles[m.id];
+}
+function managerInitials(name){
+  const a=String(name||"?").trim().split(/\s+/).filter(Boolean);
+  return (a.length>1?a[0][0]+a[a.length-1][0]:a[0]?.slice(0,2)||"?").toUpperCase();
+}
+function renderProfiles(){
+  const grid=$("#profilesGrid"); if(!grid) return;
+  grid.innerHTML=S.participants.map(m=>{
+    const pr=profileFor(m), h=pr.history||{};
+    return `<div class="profile-card">
+      <div class="profile-top">
+        <div class="manager-photo-wrap">${pr.photo?`<img class="manager-photo" src="${esc(pr.photo)}" alt="${esc(m.name)}" />`:`<div class="manager-photo-fallback">${esc(managerInitials(m.name))}</div>`}</div>
+        <div style="min-width:0"><div class="profile-name">${esc(m.name)}</div><div class="profile-subtitle">PIRLO Boys FPL Draft Auction 2026 · FPL Draft Manager</div></div>
+      </div>
+      <div class="field" style="margin:0 0 16px"><label>Team name</label><input type="text" data-profile-team="${m.id}" value="${esc(pr.teamName||"")}" placeholder="Enter team name"></div>
+      <div class="profile-history">
+        <div class="profile-history-title">League history</div>
+        <div class="profile-rank">
+          <div class="field"><label>2024/25 final position</label><input type="number" min="1" step="1" data-profile-rank="${m.id}|2024/25" value="${esc(h["2024/25"]??"")}" placeholder="e.g. 1"></div>
+          <div class="field"><label>2025/26 final position</label><input type="number" min="1" step="1" data-profile-rank="${m.id}|2025/26" value="${esc(h["2025/26"]??"")}" placeholder="e.g. 3"></div>
+        </div>
+      </div>
+      <div class="profile-actions">
+        <label class="btn ghost" style="cursor:pointer">📷 Choose photo<input type="file" accept="image/*" data-profile-photo="${m.id}" hidden></label>
+        ${pr.photo?`<button class="hbtn" data-profile-remove="${m.id}">Remove photo</button>`:""}
+      </div>
+    </div>`;
+  }).join("");
+}
+
+/* ============================== LEADERBOARD ============================== */
+/* No FPL league needed: on demand we fetch bootstrap-static and sum each
+   manager's owned players' points (event_points = current GW, total_points = season). */
+async function fetchScores(){
+  const owned = S.players.filter(p=>p.ownerId!=null);
+  if(!owned.length){ toast("No squads yet — run the auction first."); return; }
+  if(!owned.some(p=>String(p.id).startsWith("fpl"))){
+    $("#boardWrap").innerHTML = `<div class="empty"><div class="big">Can't match players to FPL</div>Your pool was loaded from a CSV, so player IDs don't map to the FPL API. Re-load the pool via “Fetch from FPL API” to enable live scoring.</div>`;
+    return;
+  }
+  const st=$("#boardStatus"); $("#btnBoard").disabled=true;
+  try{
+    const data = await fetchJSON("https://fantasy.premierleague.com/api/bootstrap-static/?_="+Date.now(), m=>st.textContent=m);
+    const pts = Object.fromEntries(data.elements.map(e=>["fpl"+e.id, {gw:e.event_points||0, total:e.total_points||0}]));
+    const cur = (data.events||[]).find(e=>e.is_current) || (data.events||[]).find(e=>e.is_next);
+    const gwLabel = cur ? cur.name + (cur.is_next&&!cur.is_current?" (not started)":"") : "—";
+    const rows = S.participants.map(m=>{
+      const mine=S.players.filter(p=>p.ownerId===m.id);
+      const activeIds=new Set(activePlayerIds(m.id));
+      let gw=0,total=0,matched=0,best={n:"—",v:-1};
+      for(const p of mine){ if(!activeIds.has(p.id)) continue; const x=pts[p.id]; if(!x) continue; matched++;
+        gw+=x.gw; total+=x.total; if(x.gw>best.v) best={n:shortName(p),v:x.gw}; }
+      return {name:m.name, gw, total, matched, squad:mine.length, active:activeIds.size, best};
+    }).sort((a,b)=>b.total-a.total||b.gw-a.gw);
+    S.board = {ts:Date.now(), gw:gwLabel, rows};
+    save(); renderBoard(); st.textContent="";
+  }catch(e){
+    st.textContent="Couldn't reach the FPL API — if deployed on Netlify, check netlify.toml is in the deploy; otherwise retry in a moment.";
+    console.error(e);
+  }
+  $("#btnBoard").disabled=false;
+}
+function renderBoard(){
+  const b=S.board; if(!b) return;
+  const when=new Date(b.ts);
+  $("#boardWrap").innerHTML = `
+    <div class="small muted" style="margin:4px 0 10px">Last updated: <b class="mono">${when.toLocaleDateString()} ${when.toLocaleTimeString()}</b> · ${esc(b.gw)} · active starting XI + replacements count</div>
+    <div style="overflow:auto"><table><thead><tr><th>#</th><th>Manager</th><th>GW pts</th><th>Season total</th><th>Top GW player</th><th>Active players</th><th>Roster</th></tr></thead><tbody>
+    ${b.rows.map((r,i)=>`<tr class="${i===0?"rank1":""}"><td class="mono"><b>${i+1}</b></td>
+      <td><b>${esc(r.name)}</b></td><td class="mono">${r.gw}</td><td class="mono"><b>${r.total}</b></td>
+      <td class="small">${esc(r.best.n)}${r.best.v>0?` <span class="mono muted">(${r.best.v})</span>`:""}</td>
+      <td class="mono muted">${r.matched}/${r.active}</td><td class="mono muted">${r.squad}</td></tr>`).join("")}
+    </tbody></table></div>
+    <p class="small muted" style="margin-top:10px">Before Gameweek 1 kicks off, “Season total” shows FPL's carried-over 2025/26 totals — it resets to real 2026/27 points once the season starts.</p>`;
+}
+
+/* ============================== EXCEL EXPORT / IMPORT ============================== */
+function exportXLSX(){
+  if(typeof XLSX==="undefined"){ toast("Excel library didn't load — check your connection and refresh."); return; }
+  const wb=XLSX.utils.book_new();
+  const pmap=Object.fromEntries(S.participants.map(m=>[m.id,m.name]));
+  const sheet=(rows,name)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),name);
+  sheet(S.players.map(p=>({ID:p.id,Name:p.name,WebName:p.web||"",Club:p.team,Position:p.pos,ListPrice:p.price,Tier:p.tier,
+    SeasonPts:p.pts??"",PPG:p.ppg??"",Photo:p.photo||"",Status:p.status,OwnerID:p.ownerId??"",Owner:p.ownerId?(pmap[p.ownerId]||""):"",Paid:p.paid||0})),"Players");
+  sheet(S.participants.map(m=>({ID:m.id,Name:m.name,Budget:m.budget,Spent:m.spent})),"Managers");
+  sheet(S.participants.map(m=>{const pr=profileFor(m);return {ManagerID:m.id,Manager:m.name,TeamName:pr.teamName||"",Photo:pr.photo||"",
+    "2024/25 Position":pr.history["2024/25"]||"",
+    "2025/26 Position":pr.history["2025/26"]||""};}),"Profiles");
+  sheet(S.participants.flatMap(m=>SUB_POS.map(pos=>({ManagerID:m.id,Manager:m.name,Position:pos,PlayerID:S.subs?.[m.id]?.[pos]||"",Player:S.subs?.[m.id]?.[pos]?pById(S.subs[m.id][pos])?.name||"":""}))),"Substitutes");
+  sheet(S.subHistory.map(x=>({ManagerID:x.managerId,Manager:partById(x.managerId)?.name||"",OutID:x.outId,Out:pById(x.outId)?.name||"",InID:x.inId,In:pById(x.inId)?.name||"",Time:new Date(x.ts).toISOString()})),"Substitutions");
+  sheet(S.log.map(l=>({Type:l.type,PlayerID:l.playerId,Player:l.name,BuyerID:l.buyerId??"",Buyer:l.buyer,
+    Amount:l.amount,Time:new Date(l.ts).toISOString()})),"Log");
+  sheet(S.queue.map((id,i)=>({Order:i+1,PlayerID:id})),"Queue");
+  const st=S.settings;
+  sheet([
+    {Key:"budget",Value:st.budget},{Key:"timer",Value:st.timer},{Key:"openBid",Value:st.openBid},
+    {Key:"minBid",Value:st.minBid},{Key:"minPrice",Value:st.minPrice},{Key:"sound",Value:st.sound?1:0},
+    {Key:"quota",Value:JSON.stringify(st.quota)},{Key:"tiers",Value:JSON.stringify(st.tiers)},
+    {Key:"targetPool",Value:st.targetPool},{Key:"guaranteeMin",Value:st.guaranteeMin},
+    {Key:"qIndex",Value:S.qIndex},{Key:"started",Value:S.started?1:0},{Key:"theme",Value:S.theme}
+  ],"Settings");
+  XLSX.writeFile(wb,`conran-smith-lane-${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast("Exported full auction state to Excel ✓");
+}
+function importXLSX(buf){
+  if(typeof XLSX==="undefined"){ toast("Excel library didn't load — check your connection and refresh."); return; }
+  const wb=XLSX.read(buf,{type:"array"});
+  const sh=n=>wb.Sheets[n]?XLSX.utils.sheet_to_json(wb.Sheets[n]):[];
+  const P=sh("Players"), M=sh("Managers");
+  if(!P.length||!M.length){ toast("That workbook needs at least the Players and Managers sheets."); return; }
+  const ns=freshState();
+  // settings + meta
+  for(const r of sh("Settings")){
+    const k=r.Key,v=r.Value;
+    if(["budget","timer","openBid","minBid","minPrice"].includes(k)) ns.settings[k]=+v;
+    else if(k==="sound") ns.settings.sound=!!+v;
+    else if(["targetPool","guaranteeMin"].includes(k)) ns.settings[k]=+v;
+    else if(["quota","tiers"].includes(k)){ try{ns.settings[k]=JSON.parse(v);}catch(e){} }
+    else if(k==="qIndex") ns.qIndex=+v||0;
+    else if(k==="started") ns.started=!!+v;
+    else if(k==="theme") ns.theme=v==="light"?"light":"dark";
+  }
+  ns.participants=M.map(m=>({id:+m.ID,name:String(m.Name||"Manager"),budget:+m.Budget||0,spent:+m.Spent||0}));
+  ns.profiles={}; const PR=wb.Sheets["Profiles"]?XLSX.utils.sheet_to_json(wb.Sheets["Profiles"]):[]; PR.forEach(r=>{ const id=+r.ManagerID; if(id) ns.profiles[id]={photo:String(r.Photo||""),teamName:String(r.TeamName||""),history:{"2024/25":String(r["2024/25 Position"]||""),"2025/26":String(r["2025/26 Position"]||"")}}; });
+  ns.players=P.map(p=>({id:String(p.ID),name:String(p.Name||"?"),web:String(p.WebName||p.Name||""),team:String(p.Club||"—"),
+    pos:POS.includes(p.Position)?p.Position:"MID",price:+p.ListPrice||0,
+    tier:Math.min(3,Math.max(1,+p.Tier||3)),
+    pts:p.SeasonPts!==""&&p.SeasonPts!=null?+p.SeasonPts:null, ppg:p.PPG!==""&&p.PPG!=null?+p.PPG:null, photo:String(p.Photo||"")||null,
+    ownerId:p.OwnerID!==""&&p.OwnerID!=null?+p.OwnerID:null,
+    paid:+p.Paid||0,status:"available"}));
+  // ownership drives status; budgets are recomputed from Paid so hand-edits in Excel stay consistent
+  ns.players.forEach(p=>{ if(p.ownerId!=null && ns.participants.some(m=>m.id===p.ownerId)) p.status="sold"; else {p.ownerId=null;p.paid=0;} });
+  ns.participants.forEach(m=>{
+    m.spent=+ns.players.filter(p=>p.ownerId===m.id).reduce((a,p)=>a+p.paid,0).toFixed(1);
+    m.budget=+(ns.settings.budget-m.spent).toFixed(1);
+  });
+  ns.subs={}; ns.participants.forEach(m=>ns.subs[m.id]={DEF:null,MID:null,FWD:null});
+  ns.profiles=ns.profiles||{}; ns.participants.forEach(m=>{ns.profiles[m.id]=Object.assign({photo:"",teamName:"",history:{"2024/25":"","2025/26":""}},ns.profiles[m.id]||{});});
+  for(const r of sh("Substitutes")){ const mid=+r.ManagerID, pos=String(r.Position||""); if(ns.subs[mid]&&SUB_POS.includes(pos)&&r.PlayerID!==""&&r.PlayerID!=null) ns.subs[mid][pos]=String(r.PlayerID); }
+  ns.subHistory=sh("Substitutions").map(r=>({managerId:+r.ManagerID,outId:String(r.OutID),inId:String(r.InID),ts:Date.parse(r.Time)||Date.now()})).filter(x=>x.managerId&&x.outId&&x.inId);
+  ns.rawLoaded=ns.players.length>0;
+  ns.log=sh("Log").map(l=>({type:l.Type==="sold"?"sold":"passed",playerId:String(l.PlayerID),name:String(l.Player||""),
+    buyerId:l.BuyerID!==""&&l.BuyerID!=null?+l.BuyerID:null,buyer:String(l.Buyer||"—"),
+    amount:+l.Amount||0,ts:Date.parse(l.Time)||Date.now()}));
+  // any sold player missing a log entry (e.g. added by hand in Excel) gets one, so ✎/↩ always work
+  for(const p of ns.players){ if(p.status==="sold"&&!ns.log.some(l=>l.type==="sold"&&l.playerId===p.id)){
+    const m=ns.participants.find(x=>x.id===p.ownerId);
+    ns.log.unshift({type:"sold",playerId:p.id,name:p.name,buyerId:p.ownerId,buyer:m?m.name:"?",amount:p.paid,ts:Date.now()});
+  }}
+  ns.queue=sh("Queue").sort((a,b)=>a.Order-b.Order).map(r=>String(r.PlayerID)).filter(id=>ns.players.some(p=>p.id===id));
+  // make sure every still-available player has a spot in the sealed queue
+  const inQ=new Set(ns.queue);
+  for(const p of ns.players){ if(p.status==="available"&&!inQ.has(p.id)){
+    const rest=Math.max(1,ns.queue.length-ns.qIndex);
+    ns.queue.splice(Math.min(ns.queue.length,ns.qIndex+1+Math.floor(rand()*rest)),0,p.id);
+  }}
+  ns.qIndex=Math.min(ns.qIndex,ns.queue.length);
+  ns.onBlock=null; ns.view=S.view;
+  S=migrate(ns); normalizeIds(); save();
+  document.documentElement.dataset.theme=S.theme;
+  clearInterval(timerH);
+  if(S.started){ nextLot(); }
+  switchView(S.view||"setup");
+  toast(`Imported ✓ ${S.players.length} players, ${S.participants.length} managers${S.started?" — auction resumed":""}`);
+}
+
+/* ============================== EVENTS ============================== */
+document.addEventListener("click", e=>{
+  const t=e.target.closest("button"); if(!t) return;
+  if(t.dataset.v) switchView(t.dataset.v);
+  if(t.id==="btnTheme"){ S.theme=S.theme==="dark"?"light":"dark"; document.documentElement.dataset.theme=S.theme; save(); }
+  if(t.id==="btnFetchFPL") loadFromFPL();
+  if(t.id==="btnAddP"){ readSetupInputs(); S.participants.push({id:Date.now(),name:`Manager ${S.participants.length+1}`,budget:S.settings.budget,spent:0}); save(); renderSetup(); }
+  if(t.dataset.rm){ if(S.participants.length<=2){toast("Need at least 2 managers.");return;} S.participants=S.participants.filter(p=>p.id!=t.dataset.rm); save(); renderSetup(); }
+  if(t.id==="btnStart"){ if(S.started && !confirm("Auction already in progress — rebuild the sealed queue with current settings and continue?")) return; startAuction(); }
+  if(t.id==="btnReset"){ if(confirm("Wipe everything — players, squads, log — and start fresh?")){ localStorage.removeItem(LS_KEY); S=freshState(); document.documentElement.dataset.theme=S.theme; switchView("setup"); } }
+  if(t.dataset.win) selectWinner(+t.dataset.win);
+  if(t.dataset.step){ const ob=S.onBlock; if(ob) setPrice((ob.bid||S.settings.openBid) + (+t.dataset.step)*S.settings.minBid); }
+  if(t.dataset.setp) setPrice(+t.dataset.setp);
+  if(t.dataset.edit){ editingId=t.dataset.edit; renderAuction(); }
+  if(t.dataset.ecancel){ editingId=null; renderAuction(); }
+  if(t.dataset.esave) saveEdit(t.dataset.esave);
+  if(t.dataset.revert){ if(confirm("Revert this sale? The player returns to the auction pool and the manager is refunded.")) revertSale(t.dataset.revert); }
+  if(t.dataset.unpass) undoPass(t.dataset.unpass);
+  if(t.dataset.sqadd){ const [mId,pos,n]=t.dataset.sqadd.split("|"); sqEdit={mId:+mId,pos,n:+n,pid:null,sub:false}; renderSquads(); }
+  if(t.dataset.sqedit){ const [mId,pos,n,pid]=t.dataset.sqedit.split("|"); sqEdit={mId:+mId,pos,n:+n,pid,sub:false}; renderSquads(); }
+  if(t.dataset.sqaddSub){ const [mId,pos]=t.dataset.sqaddSub.split("|"); sqEdit={mId:+mId,pos,n:0,pid:null,sub:true}; renderSquads(); }
+  if(t.dataset.sqeditSub){ const [mId,pos,pid]=t.dataset.sqeditSub.split("|"); sqEdit={mId:+mId,pos,n:0,pid,sub:true}; renderSquads(); }
+  if(t.dataset.sqdelSub){ const [mId,pos,pid]=t.dataset.sqdelSub.split("|"); const m=partById(+mId), p=pById(pid); if(p&&m&&!subUsed(m.id,pid)&&confirm(`Remove ${p.name} from ${m.name}'s substitute slot?`)){ m.budget=+(m.budget+p.paid).toFixed(1); m.spent=+(m.spent-p.paid).toFixed(1); p.status="available"; p.ownerId=null; p.paid=0; S.subs[m.id][pos]=null; const le=S.log.find(l=>l.type==="sold"&&l.playerId===pid&&l.buyerId===m.id); if(le) S.log.splice(S.log.indexOf(le),1); S.board=null; save(); renderSquads(); toast(`${p.name} removed and ${m.name} refunded.`); } }
+  if(t.id==="btnSubstitute"){ makeSubstitution(+$(`#subManager`).value, $(`#subOut`).value, $(`#subIn`).value); }
+  if(t.id==="sqSave") manualAssign();
+  if(t.id==="sqCancel"){ sqEdit=null; renderSquads(); }
+  if(t.dataset.sqdel){ if(confirm("Remove this player from the squad? They return to the auction pool and the manager is refunded.")) revertSale(t.dataset.sqdel); }
+  if(t.id==="btnRestartT"){ clearInterval(timerH); timeLeft=S.settings.timer; paused=false; timerH=setInterval(tick,1000); renderTimer(); renderAuction(); }
+  if(t.id==="btnHammer"){ clearInterval(timerH); hammer(); }
+  if(t.id==="btnSkip"){ if(S.onBlock){ S.onBlock.bidderId=null; clearInterval(timerH); hammer(); } }
+  if(t.id==="btnPause"){ paused=!paused; renderTimer(); renderAuction(); }
+  if(t.id==="btnUndo") undoLast();
+  if(t.id==="btnBoard") fetchScores();
+  if(t.dataset.profileRemove){ const pr=profileFor(partById(+t.dataset.profileRemove)); pr.photo=""; save(); renderProfiles(); toast("Manager photo removed ✓"); }
+  if(t.dataset.refresh) refreshView(t.dataset.refresh);
+  if(t.id==="btnExport") exportXLSX();
+  if(t.id==="btnImport") $("#importFile").click();
+});
+// data-bid holds participant id which may be number or Date.now(); normalize
+function normalizeIds(){ S.participants.forEach(p=>p.id=+p.id); }
+document.addEventListener("change", e=>{
+  if(e.target.id==="subManager"||e.target.id==="subOut"){ updateSubControls(); }
+  if(e.target.dataset.profileRank){ const [mid,season]=e.target.dataset.profileRank.split("|"); const pr=profileFor(partById(+mid)); pr.history[season]=e.target.value.trim(); save(); }
+  if(e.target.dataset.profileTeam){ const pr=profileFor(partById(+e.target.dataset.profileTeam)); pr.teamName=e.target.value.trim(); save(); }
+  if(e.target.dataset.profilePhoto){ const mid=+e.target.dataset.profilePhoto, m=partById(mid), f=e.target.files&&e.target.files[0]; if(!m||!f) return; if(f.size>2*1024*1024){ toast("Photo is too large — use an image under 2 MB."); e.target.value=""; return; } const r=new FileReader(); r.onload=()=>{ const pr=profileFor(m); pr.photo=String(r.result); save(); renderProfiles(); toast(`${m.name}'s photo saved ✓`); }; r.readAsDataURL(f); }
+});
+document.addEventListener("input", e=>{
+  if(["fSearch","fPos","fClub","fOwner","fTier","fStatus"].includes(e.target.id)) renderPool();
+  if(["rSearch","rPos","rClub","rTier"].includes(e.target.id)) renderRemaining();
+});
+document.addEventListener("change", e=>{
+  if(e.target.id==="finalPrice" && S.onBlock) setPrice(e.target.value);
+});
+document.querySelectorAll("#poolTable th").forEach(th=>th.addEventListener("click",()=>{
+  const k=th.dataset.s; if(sortKey===k) sortDir*=-1; else {sortKey=k; sortDir=k==="name"||k==="team"?1:-1;} renderPool();
+}));
+document.querySelectorAll("#remTable th").forEach(th=>th.addEventListener("click",()=>{
+  const k=th.dataset.s; if(rSortKey===k) rSortDir*=-1; else {rSortKey=k; rSortDir=k==="name"||k==="team"?1:-1;} renderRemaining();
+}));
+$("#importFile").addEventListener("change",e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  if(f.name.toLowerCase().endsWith(".json")){
+    r.onload=()=>{ try{ S=migrate(JSON.parse(r.result)); normalizeIds(); save();
+      document.documentElement.dataset.theme=S.theme;
+      switchView(S.view||"setup"); if(S.started&&S.onBlock){timeLeft=S.settings.timer;timerH=setInterval(tick,1000);}
+      toast("Auction state imported ✓"); }catch(x){ toast("That file isn't a valid export."); } };
+    r.readAsText(f);
+  }else{
+    r.onload=()=>{ try{ importXLSX(new Uint8Array(r.result)); }catch(x){ console.error(x); toast("Couldn't read that Excel file — use an export from this app."); } };
+    r.readAsArrayBuffer(f);
+  }
+  e.target.value="";
+});
+const dz=$("#dropZone");
+dz.addEventListener("dragover",e=>{e.preventDefault();dz.classList.add("over");});
+dz.addEventListener("dragleave",()=>dz.classList.remove("over"));
+dz.addEventListener("drop",e=>{e.preventDefault();dz.classList.remove("over"); if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);});
+$("#csvFile").addEventListener("change",e=>{ if(e.target.files[0]) handleFile(e.target.files[0]); });
+document.addEventListener("keydown",e=>{
+  if((e.target.id==="sqName"||e.target.id==="sqPrice") && e.key==="Enter"){ e.preventDefault(); manualAssign(); return; }
+  if(S.view!=="auction"||!S.onBlock||/input|select/i.test(e.target.tagName)) return;
+  const n=+e.key, ob=S.onBlock;
+  if(n>=1&&n<=S.participants.length) selectWinner(S.participants[n-1].id);
+  if(e.key==="+"||e.key==="ArrowUp"){ e.preventDefault(); setPrice((ob.bid||S.settings.openBid)+S.settings.minBid); }
+  if(e.key==="-"||e.key==="ArrowDown"){ e.preventDefault(); setPrice((ob.bid||S.settings.openBid)-S.settings.minBid); }
+  if(e.key===" "){ e.preventDefault(); paused=!paused; renderTimer(); renderAuction(); }
+  if(e.key==="Enter"){ clearInterval(timerH); hammer(); }
+});
+
+/* ============================== INIT ============================== */
+normalizeIds();
+document.documentElement.dataset.theme=S.theme;
+/* Anchor routing: open any tab directly, e.g. yoursite.netlify.app/#squads or #auction.
+   Handy for projecting different tabs in different browser windows. */
+const hashView = (location.hash||"").replace("#","");
+switchView(hashView || S.view || "setup");
+window.addEventListener("hashchange", ()=>{ const v=(location.hash||"").replace("#",""); if(v && v!==S.view) switchView(v); });
+/* Cross-window sync (same browser/computer): when the auctioneer's window saves
+   state, every other open window/tab of this site updates automatically. */
+window.addEventListener("storage", e=>{
+  if(e.key!==LS_KEY) return;
+  const fresh=load(); if(!fresh) return;
+  const v=S.view; S=fresh; S.view=v;   // keep this window's own tab
+  normalizeIds(); renderView(v);
+});
+if(S.started && S.onBlock){ timeLeft=S.settings.timer; timerH=setInterval(tick,1000); renderAuction(); }
+/* Real-time pool: whenever the app opens BEFORE the auction has started, quietly
+   re-fetch the latest players and prices from FPL (throttled to every 5 min).
+   Once the auction starts, the pool is frozen — prices are locked for fairness. */
+if(S.rawLoaded && !S.started && (!S.loadedAt || Date.now()-S.loadedAt > 5*60*1000)) loadFromFPL(true);
+</script>
+</body>
+</html>
