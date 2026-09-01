@@ -1,0 +1,15 @@
+# Deploy this file in the SAME folder as fpl-auction.html.
+# It makes Netlify proxy FPL API calls server-side through your own domain,
+# which bypasses the FPL API's CORS restriction completely.
+
+[[redirects]]
+  from = "/fpl-api/*"
+  to = "https://fantasy.premierleague.com/api/:splat"
+  status = 200
+  force = true
+
+# Serve the auction app at the root URL
+[[redirects]]
+  from = "/"
+  to = "/fpl-auction.html"
+  status = 200
