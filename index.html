@@ -843,15 +843,34 @@ function renderSetup(){
    proportional mix of all tiers. Order is never displayed. */
 function buildQueue(){
   const avail = S.players.filter(p=>p.status==="available");
+  const target = Math.min(S.settings.targetPool || 200, avail.length);
+
   const entries = [];
+
   for(let t=1;t<=3;t++){
     const grp = avail.filter(p=>p.tier===t);
+
     // shuffle within tier (Fisher-Yates, crypto randomness)
-    for(let i=grp.length-1;i>0;i--){ const j=Math.floor(rand()* (i+1)); [grp[i],grp[j]]=[grp[j],grp[i]]; }
-    grp.forEach((p,i)=> entries.push({id:p.id, key:(i + rand())/grp.length + rand()*1e-9}));
+    for(let i=grp.length-1;i>0;i--){
+      const j=Math.floor(rand()*(i+1));
+      [grp[i],grp[j]]=[grp[j],grp[i]];
+    }
+
+    grp.forEach((p,i)=>{
+      entries.push({
+        id:p.id,
+        key:(i + rand())/grp.length + rand()*1e-9
+      });
+    });
   }
+
+  // Randomised ordering across tiers
   entries.sort((a,b)=>a.key-b.key);
-  S.queue = entries.map(e=>e.id);
+
+  // Respect Target pool size
+  const selected = entries.slice(0, target);
+
+  S.queue = selected.map(e=>e.id);
   S.qIndex = 0;
 }
 function rand(){ const a=new Uint32Array(1); crypto.getRandomValues(a); return a[0]/2**32; }
