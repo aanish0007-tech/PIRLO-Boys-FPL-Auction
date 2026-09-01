@@ -533,7 +533,12 @@ const sndOnce=()=>beep(660,.15), sndTwice=()=>beep(880,.15), sndSold=()=>{beep(5
    2. Direct fetch (works in rare embedded/extension contexts).
    3. Public CORS proxies as a last resort for local file:// use. */
 const PROXIES = [
-  {name:"Netlify proxy", wrap:u => "/fpl-api/" + u.split("/api/")[1]},
+  {
+    name: "Cloudflare FPL proxy",
+    wrap: u =>
+      "https://pirlo-fpl-api.aanish0007.workers.dev/fpl-api/" +
+      u.split("/api/")[1]
+  },
   {name:"direct",        wrap:u => u},
   {name:"corsproxy.io",  wrap:u => "https://corsproxy.io/?url=" + encodeURIComponent(u)},
   {name:"allorigins",    wrap:u => "https://api.allorigins.win/raw?url=" + encodeURIComponent(u)},
