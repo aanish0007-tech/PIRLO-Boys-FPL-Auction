@@ -260,7 +260,10 @@ table.xl{border-collapse:separate;border-spacing:0;font-size:12px;table-layout:f
 .live-view .hspacer,.live-view #btnExport,.live-view #btnImport,.live-view #btnReset,.live-view #btnTheme{display:none!important}
 .live-view .viewbar .hbtn{display:none!important}
 .live-view .live-pool-note{display:block!important}
-.live-view .sq-card .cellbtns,.live-view .sqadd,.live-view .subsection,.live-view .substitution-box{display:none!important}.live-view [data-sqadd],.live-view [data-sqadd-sub],.live-view [data-sqedit],.live-view [data-sqdel],.live-view [data-sqedit-sub],.live-view [data-sqdel-sub]{pointer-events:none!important}
+.live-view .sq-card .cellbtns,.live-view .sqadd,.live-view .subsection,.live-view .substitution-box{display:none!important}
+.live-view .profile-actions,.live-view .history-edit{display:none!important}
+.live-view .profile-manager-row{cursor:pointer}
+.live-view .profile-stage{box-shadow:0 18px 55px rgba(0,0,0,.34)}.live-view [data-sqadd],.live-view [data-sqadd-sub],.live-view [data-sqedit],.live-view [data-sqdel],.live-view [data-sqedit-sub],.live-view [data-sqdel-sub]{pointer-events:none!important}
 </style>
 
 <style id="poker-theme">
@@ -311,6 +314,8 @@ header{box-shadow:0 6px 30px rgba(0,0,0,.28)}
     <nav id="liveNav" aria-label="Manager view">
       <button data-v="squads" class="on">Squads</button>
       <button data-v="players">Auction Pool</button>
+      <button data-v="liveRemaining">Remaining Pool</button>
+      <button data-v="profiles">Manager Profiles</button>
     </nav>
     <div class="hspacer"></div>
     <button class="hbtn" id="btnExport" title="Download the full auction state as an Excel file">Export .xlsx</button>
@@ -459,6 +464,24 @@ header{box-shadow:0 6px 30px rgba(0,0,0,.28)}
   </div>
 </section>
 
+<!-- ================= LIVE REMAINING POOL ================= -->
+<section class="view wide" id="v-liveRemaining">
+  <div class="card">
+    <div class="section-head">
+      <div><h2>Remaining Auction Pool</h2><div class="muted small">Players still available to be nominated in the main auction.</div></div>
+      <div class="stat" id="liveRemainingCount">0 available</div>
+    </div>
+    <div class="filters">
+      <input type="search" id="liveRemainingSearch" placeholder="Search player or team…">
+      <select id="liveRemainingPos"><option value="">All positions</option><option>GK</option><option>DEF</option><option>MID</option><option>FWD</option></select>
+      <span class="small muted" id="liveRemainingNote"></span>
+    </div>
+    <div style="overflow:auto"><table id="liveRemainingTable"><thead><tr>
+      <th>Player</th><th>Team</th><th>Pos</th><th>Price</th><th>Tier</th><th>Pts</th><th>PPG</th>
+    </tr></thead><tbody></tbody></table></div>
+  </div>
+</section>
+
 <!-- ================= SQUADS ================= -->
 <section class="view wide" id="v-squads">
   <div class="card">
@@ -527,6 +550,7 @@ function freshState(){
     board: null,            // cached leaderboard {ts, gw, rows}
     started: false,
     mainAuctionComplete: false,
+    manualPoolIds: [],          // reserve-pool players manually added to the main auction pool
     view: "setup",
     profileSelected: 1,
     theme: (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
@@ -542,6 +566,7 @@ function migrate(s){
   if(!(+(s.settings.timerT2)>0)) s.settings.timerT2=Math.max(5,(s.settings.timer||20)-5);
   if(!(+(s.settings.timerT3)>0)) s.settings.timerT3=Math.max(5,(s.settings.timer||20)-10);
   if(s.mainAuctionComplete==null) s.mainAuctionComplete=false;
+  if(!Array.isArray(s.manualPoolIds)) s.manualPoolIds=[];
   if(!Array.isArray(s.allPlayers) || !s.allPlayers.length) s.allPlayers=Array.isArray(s.players)?s.players.map(x=>({...x})):[];
   if(!(+s.settings.targetPool>0)) s.settings.targetPool=200;
   if(!(+s.settings.guaranteeMin>0)) s.settings.guaranteeMin=6.0;
@@ -576,6 +601,7 @@ function publicState(){
     version: 1,
     updatedAt: Date.now(),
     participants: S.participants,
+    profiles: S.profiles || {},
     players: S.players.map(p=>({
       id:p.id, name:p.name, web:p.web, team:p.team, pos:p.pos, price:p.price,
       tier:p.tier, photo:p.photo, status:p.status, ownerId:p.ownerId, paid:p.paid
@@ -624,9 +650,11 @@ async function loadSharedState(){
     if(!r.ok) throw new Error("HTTP "+r.status);
     const data=await r.json();
     if(!data || !Array.isArray(data.players) || !Array.isArray(data.participants)) throw new Error("Invalid shared state");
-    const liveTab = (S.view === "players") ? "players" : "squads";
+    const liveTab = ["players","liveRemaining","profiles"].includes(S.view) ? S.view : "squads";
+    const liveProfileSelected = S.profileSelected;
     S=migrate(data);
     S.view=liveTab;
+    S.profileSelected = liveProfileSelected || 1;
     normalizeIds();
     renderView(liveTab);
     const stamp=data.updatedAt?new Date(data.updatedAt).toLocaleTimeString():"";
@@ -975,8 +1003,9 @@ function renderSetup(){
     const audit=S.poolAudit||{};
     const earlyProtected=audit.earlyProtected??S.players.filter(p=>p.earlyProtected).length;
     const sourceCount = Array.isArray(S.allPlayers) && S.allPlayers.length ? S.allPlayers.length : S.players.length;
+    const manualCount=Array.isArray(S.manualPoolIds)?S.manualPoolIds.length:0;
     $("#loadedInfo").innerHTML = `<div class="loaded-badge">✓ Auction pool: <b>${S.players.length}</b> players
-      <span class="muted" style="font-weight:500">(FPL source: ${sourceCount}) · T1 ${byT[0]} · T2 ${byT[1]} · T3 ${byT[2]} &nbsp;|&nbsp; ${byP}${syncT?` &nbsp;|&nbsp; synced ${syncT}`:""} · ${earlyProtected} early-season protected</span></div>`;
+      <span class="muted" style="font-weight:500">(FPL source: ${sourceCount}) · T1 ${byT[0]} · T2 ${byT[1]} · T3 ${byT[2]}${manualCount?` · +${manualCount} manually added`:""} &nbsp;|&nbsp; ${byP}${syncT?` &nbsp;|&nbsp; synced ${syncT}`:""} · ${earlyProtected} early-season protected</span></div>`;
   } else $("#loadedInfo").innerHTML = "";
 }
 
@@ -986,7 +1015,6 @@ function renderSetup(){
    proportional mix of all tiers. Order is never displayed. */
 function buildQueue(){
   const avail = S.players.filter(p=>p.status==="available");
-  const target = Math.min(S.settings.targetPool || 200, avail.length);
 
   const entries = [];
 
@@ -1010,10 +1038,9 @@ function buildQueue(){
   // Randomised ordering across tiers
   entries.sort((a,b)=>a.key-b.key);
 
-  // Respect Target pool size
-  const selected = entries.slice(0, target);
-
-  S.queue = selected.map(e=>e.id);
+  // Queue every player currently in the main auction pool.
+  // This also includes any players manually added from the Reserve Pool.
+  S.queue = entries.map(e=>e.id);
   S.qIndex = 0;
 }
 function rand(){ const a=new Uint32Array(1); crypto.getRandomValues(a); return a[0]/2**32; }
@@ -1029,7 +1056,14 @@ function startAuction(){
   // rebuilt from the full API dataset. The auction NEVER uses allPlayers
   // directly; it uses only S.players, which is the selected target pool.
   if(!S.started && Array.isArray(S.allPlayers) && S.allPlayers.length){
+    const manualIds = new Set(Array.isArray(S.manualPoolIds) ? S.manualPoolIds : []);
     S.players = trimPool(S.allPlayers);
+    // Keep any players the auctioneer manually added from the Reserve Pool.
+    for(const pid of manualIds){
+      if(S.players.some(p=>p.id===pid)) continue;
+      const source = S.allPlayers.find(p=>p.id===pid);
+      if(source) S.players.push({...source,status:"available",ownerId:null,paid:0});
+    }
     save();
   }
   const need = S.participants.length * Object.values(S.settings.quota).reduce((a,b)=>a+b,0);
@@ -1320,7 +1354,7 @@ function undoLast(){
 
 /* ============================== RENDER ============================== */
 function switchView(v){
-  if(LIVE_VIEW && !["squads","players"].includes(v)) v="squads";
+  if(LIVE_VIEW && !["squads","players","liveRemaining","profiles"].includes(v)) v="squads";
   if(!document.getElementById("v-"+v)) v="setup";
   S.view=v;
   if(!LIVE_VIEW) save();
@@ -1334,6 +1368,7 @@ function renderView(v){
   if(v==="setup") renderSetup();
   if(v==="auction") renderAuction();
   if(v==="players") renderPool();
+  if(v==="liveRemaining") renderLiveRemaining();
   if(v==="remaining") renderRemaining();
   if(v==="squads") renderSquads();
   if(v==="profiles") renderProfiles();
@@ -1467,6 +1502,22 @@ function renderPool(){
     <td>${p.status==="sold"?`<span class="small">→ ${esc(partById(p.ownerId)?.name||"?")} <span class="mono muted">(${fmt(p.paid)})</span></span>`:'<span class="muted small">available</span>'}</td></tr>`).join("");
 }
 
+function renderLiveRemaining(){
+  const q=(($("#liveRemainingSearch")||{}).value||"").toLowerCase();
+  const pos=(($("#liveRemainingPos")||{}).value||"");
+  const rows=S.players.filter(p=>p.status==="available" &&
+    (!q || p.name.toLowerCase().includes(q) || (p.web||"").toLowerCase().includes(q) || p.team.toLowerCase().includes(q)) &&
+    (!pos || p.pos===pos)
+  ).sort((a,b)=>b.price-a.price || (b.earlyTotal||0)-(a.earlyTotal||0) || (b.pts||0)-(a.pts||0));
+  $("#liveRemainingCount").textContent=rows.length+" available";
+  $("#liveRemainingNote").textContent=S.players.length+" players in auction pool";
+  $("#liveRemainingTable tbody").innerHTML=rows.map(p=>`<tr>
+    <td><b>${esc(p.name)}</b></td><td>${esc(p.team)}</td><td class="pos-${p.pos}"><b>${p.pos}</b></td>
+    <td class="mono">${fmt(p.price)}</td><td><span class="pill tier-${p.tier}">T${p.tier}</span></td>
+    <td class="mono">${p.pts??"—"}</td><td class="mono">${p.ppg!=null?(+p.ppg).toFixed(1):"—"}</td>
+  </tr>`).join("") || `<tr><td colspan="7" class="muted" style="text-align:center;padding:28px">No players remaining.</td></tr>`;
+}
+
 let rSortKey="price", rSortDir=-1;
 function renderRemaining(){
   const clubSel=$("#rClub"), prevClub=clubSel.value;
@@ -1481,6 +1532,7 @@ function renderRemaining(){
   $("#rCount").textContent=rows.length+" players outside the main auction pool";
   const th=$("#rthPts"); if(th) th.textContent=(S.statsLabel||"25/26")+" pts";
   const canNominate=S.mainAuctionComplete;
+  const manualIds=new Set(Array.isArray(S.manualPoolIds)?S.manualPoolIds:[]);
   const banner=$("#remainingStateBanner");
   if(banner){
     banner.innerHTML=canNominate
@@ -1488,18 +1540,45 @@ function renderRemaining(){
            <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
              <div>
                <div style="font-family:'Chakra Petch';font-weight:800;font-size:18px;color:var(--turf);letter-spacing:.5px">✓ MAIN AUCTION COMPLETE</div>
-               <div class="small" style="margin-top:3px">Nomination is now open. Choose any remaining player below to put them up for bidding.</div>
+               <div class="small" style="margin-top:3px">Choose a reserve player below to bring them into the auction for a fresh nomination.</div>
              </div>
              <span class="pill" style="background:var(--turf);color:var(--bg);font-size:12px;padding:6px 11px">NOMINATION OPEN</span>
            </div>
          </div>`
       : `<div class="card" style="padding:16px;border:1px solid var(--line);background:var(--card2)">
-           <div style="font-family:'Chakra Petch';font-weight:800;font-size:16px">MAIN AUCTION IN PROGRESS</div>
-           <div class="small muted" style="margin-top:3px">Remaining players will become available for nomination once the main auction is complete.</div>
+           <div style="font-family:'Chakra Petch';font-weight:800;font-size:16px">ADD PLAYERS TO THE MAIN AUCTION POOL</div>
+           <div class="small muted" style="margin-top:3px">You can manually add any player from the Reserve Pool. Added players will be included in the auction queue.</div>
          </div>`;
   }
-  $("#remTable tbody").innerHTML=rows.slice(0,600).map(p=>`<tr><td><b>${esc(p.name)}</b></td><td>${esc(p.team)}</td><td class="pos-${p.pos}"><b>${p.pos}</b></td><td class="mono">${fmt(p.price)}</td><td><span class="pill tier-${p.tier}">T${p.tier}</span></td><td class="mono">${p.pts??"—"}</td><td class="mono">${p.ppg!=null?(+p.ppg).toFixed(1):"—"}</td><td>${canNominate?`<button class="nominate-btn" data-nominate="${esc(p.id)}">Nominate</button>`:'<span class="muted small">After main auction</span>'}</td></tr>`).join("");
+  $("#remTable tbody").innerHTML=rows.slice(0,600).map(p=>{
+    const inManual=manualIds.has(p.id);
+    const action=canNominate
+      ? `<button class="nominate-btn" data-nominate="${esc(p.id)}">${inManual?"Nominate":"Add & Nominate"}</button>`
+      : `<button class="nominate-btn" data-addpool="${esc(p.id)}" ${inManual?'disabled':''}>${inManual?"✓ Added to Pool":"Add to Auction Pool"}</button>`;
+    return `<tr><td><b>${esc(p.name)}</b></td><td>${esc(p.team)}</td><td class="pos-${p.pos}"><b>${p.pos}</b></td><td class="mono">${fmt(p.price)}</td><td><span class="pill tier-${p.tier}">T${p.tier}</span></td><td class="mono">${p.pts??"—"}</td><td class="mono">${p.ppg!=null?(+p.ppg).toFixed(1):"—"}</td><td>${action}</td></tr>`;
+  }).join("");
 }
+function addPlayerToAuctionPool(pid){
+  if(S.mainAuctionComplete){
+    toast("Main auction is complete — use Add & Nominate to bring a reserve player up for bidding.");
+    return;
+  }
+  const source=allById(pid);
+  if(!source){toast("Player not found.");return;}
+  if(S.players.some(p=>p.id===pid)){toast(`${source.name} is already in the auction pool.`);return;}
+  if(!Array.isArray(S.manualPoolIds)) S.manualPoolIds=[];
+  S.players.push({...source,status:"available",ownerId:null,paid:0});
+  S.manualPoolIds.push(pid);
+  // If the auction has already started, append the player to the sealed queue.
+  // If it has not started yet, buildQueue() will include the player when the auction begins.
+  if(S.started && !S.queue.includes(pid)) S.queue.push(pid);
+  save();
+  toast(`${source.name} added to the main auction pool ✓`);
+  renderRemaining();
+  renderPool();
+  renderSetup();
+}
+
 function nominatePlayer(pid){
   if(!S.mainAuctionComplete){toast("Finish the main auction before nominating reserve players.");return;}
   const source=allById(pid); if(!source){toast("Player not found.");return;}
@@ -1777,6 +1856,7 @@ document.addEventListener("click", e=>{
   if(t.id==="btnStart"){ if(S.started && !confirm("Auction already in progress — rebuild the sealed queue with current settings and continue?")) return; startAuction(); }
   if(t.id==="btnReset"){ if(confirm("Wipe everything — players, squads, log — and start fresh?")){ localStorage.removeItem(LS_KEY); S=freshState(); document.documentElement.dataset.theme=S.theme; switchView("setup"); } }
   if(t.dataset.win) selectWinner(+t.dataset.win);
+  if(t.dataset.addpool) addPlayerToAuctionPool(t.dataset.addpool);
   if(t.dataset.nominate) nominatePlayer(t.dataset.nominate);
   if(t.dataset.step){ const ob=S.onBlock; if(ob) setPrice((ob.bid||S.settings.openBid) + (+t.dataset.step)*S.settings.minBid); }
   if(t.dataset.setp) setPrice(+t.dataset.setp);
@@ -1813,6 +1893,7 @@ document.addEventListener("change", e=>{
 document.addEventListener("input", e=>{
   if(["fSearch","fPos","fClub","fOwner","fTier","fStatus"].includes(e.target.id)) renderPool();
   if(["rSearch","rPos","rClub","rTier"].includes(e.target.id)) renderRemaining();
+  if(["liveRemainingSearch","liveRemainingPos"].includes(e.target.id)) renderLiveRemaining();
 });
 document.addEventListener("change", e=>{
   if(e.target.id==="finalPrice" && S.onBlock) setPrice(e.target.value);
@@ -1872,7 +1953,7 @@ const hashView = (location.hash||"").replace("#","");
 if(LIVE_VIEW){
   document.documentElement.classList.add("live-view");
   document.querySelectorAll("#nav button,#btnExport,#btnImport,#btnReset,#btnTheme").forEach(el=>el.style.display="none");
-  const liveStart = location.hash==="#players" || location.hash==="#players-live" ? "players" : "squads";
+  const liveStart = location.hash==="#players" || location.hash==="#players-live" ? "players" : location.hash==="#profiles" || location.hash==="#profiles-live" ? "profiles" : "squads";
   S.view=liveStart;
   switchView(liveStart);
   loadSharedState();
