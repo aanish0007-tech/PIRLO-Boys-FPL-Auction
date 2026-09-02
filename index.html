@@ -617,23 +617,25 @@ function scheduleSharedPublish(){
   clearTimeout(sharedPublishTimer);
   sharedPublishTimer=setTimeout(publishSharedState,350);
 }
-async function publishSharedState(){
-  if(LIVE_VIEW) return;
-  try{
+function publishSharedState(){
+  if(LIVE_VIEW) return Promise.resolve();
+  const payload=JSON.stringify(publicState());
+  sharedPublishChain=sharedPublishChain.then(async()=>{
     const r=await fetch(SHARED_STATE_URL,{
       method:"POST",
       headers:{"Content-Type":"application/json","X-Auction-Key":SHARED_STATE_KEY},
-      body:JSON.stringify(publicState()),
+      body:payload,
       mode:"cors",
       cache:"no-store"
     });
     if(!r.ok) throw new Error("HTTP "+r.status);
-  }catch(e){
-    console.warn("Shared auction publish failed:",e);
-  }
+  }).catch(e=>{ console.warn("Shared auction publish failed:",e); throw e; });
+  return sharedPublishChain;
 }
+let sharedPublishChain = Promise.resolve();
 function publishSharedNow(){
-  if(!LIVE_VIEW) publishSharedState();
+  if(LIVE_VIEW) return Promise.resolve();
+  return publishSharedState();
 }
 
 // Keep the shared viewer state alive even if the auctioneer pauses between lots.
@@ -1703,6 +1705,8 @@ function renderProfiles(){
           <div class="profile-actions" style="align-items:center">
             <div class="field" style="margin:0;flex:1;min-width:220px"><label>Team name</label><input type="text" data-profile-team="${selected.id}" value="${esc(pr.teamName||"")}" placeholder="Enter team name"></div>
             <label class="btn gold photo-btn">📷 Choose photo<input type="file" accept="image/*" data-profile-photo="${selected.id}" hidden></label>${pr.photo?`<button class="hbtn" data-profile-remove="${selected.id}">Remove photo</button>`:""}
+            <button class="btn" data-profile-save="${selected.id}">💾 Save Profiles</button>
+            <span class="small muted" data-profile-save-status="${selected.id}">Changes are local until saved</span>
           </div>
         </div>
       </div>
@@ -1887,10 +1891,28 @@ document.addEventListener("click", e=>{
 });
 // data-bid holds participant id which may be number or Date.now(); normalize
 function normalizeIds(){ S.participants.forEach(p=>p.id=+p.id); }
+document.addEventListener("click", e=>{
+  const btn=e.target.closest("[data-profile-save]");
+  if(!btn || LIVE_VIEW) return;
+  const mid=+btn.dataset.profileSave;
+  localStorage.setItem(LS_KEY, JSON.stringify(S));
+  btn.disabled=true;
+  const status=document.querySelector(`[data-profile-save-status="${mid}"]`);
+  if(status) status.textContent="Publishing…";
+  Promise.resolve(publishSharedNow()).then(()=>{
+    btn.disabled=false;
+    if(status) status.textContent="Published ✓";
+    toast("Manager profiles published to Manager View ✓");
+  }).catch(()=>{
+    btn.disabled=false;
+    if(status) status.textContent="Publish failed — try again";
+    toast("Could not publish profiles. Try again.");
+  });
+});
 document.addEventListener("change", e=>{
   if(e.target.id==="subManager"||e.target.id==="subOut"){ updateSubControls(); }
-  if(e.target.dataset.profileRank){ const [mid,season]=e.target.dataset.profileRank.split("|"); const pr=profileFor(partById(+mid)); pr.history[season]=e.target.value.trim(); save(); }
-  if(e.target.dataset.profileTeam){ const pr=profileFor(partById(+e.target.dataset.profileTeam)); pr.teamName=e.target.value.trim(); save(); }
+  if(e.target.dataset.profileRank){ const [mid,season]=e.target.dataset.profileRank.split("|"); const pr=profileFor(partById(+mid)); pr.history[season]=e.target.value.trim(); localStorage.setItem(LS_KEY, JSON.stringify(S)); renderProfiles(); }
+  if(e.target.dataset.profileTeam){ const pr=profileFor(partById(+e.target.dataset.profileTeam)); pr.teamName=e.target.value.trim(); localStorage.setItem(LS_KEY, JSON.stringify(S)); renderProfiles(); }
   if(e.target.dataset.profilePhoto){
     const mid=+e.target.dataset.profilePhoto, m=partById(mid), f=e.target.files&&e.target.files[0];
     if(!m||!f) return;
@@ -1905,7 +1927,7 @@ document.addEventListener("change", e=>{
         const c=document.createElement("canvas"); c.width=Math.max(1,Math.round(img.naturalWidth*scale)); c.height=Math.max(1,Math.round(img.naturalHeight*scale));
         const ctx=c.getContext("2d"); ctx.drawImage(img,0,0,c.width,c.height);
         const compressed=c.toDataURL("image/jpeg",.78);
-        const pr=profileFor(m); pr.photo=compressed; save(); renderProfiles(); toast(`${m.name}'s photo saved ✓`);
+        const pr=profileFor(m); pr.photo=compressed; localStorage.setItem(LS_KEY, JSON.stringify(S)); renderProfiles(); toast(`${m.name}'s photo saved ✓ — click Save Profiles to publish`);
       };
       img.onerror=()=>toast("Could not read that photo. Please choose another image.");
       img.src=raw;
