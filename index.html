@@ -254,7 +254,7 @@ table.xl{border-collapse:separate;border-spacing:0;font-size:12px;table-layout:f
 :focus-visible{outline:2px solid var(--turf);outline-offset:2px}
 .live-view #nav,.live-view .hspacer,.live-view #btnExport,.live-view #btnImport,.live-view #btnReset,.live-view #btnTheme{display:none!important}
 .live-view .viewbar .hbtn{display:none!important}
-.live-view .sq-card .cellbtns,.live-view .subsection,.live-view .substitution-box{display:none!important}
+.live-view .sq-card .cellbtns,.live-view .sqadd,.live-view .subsection,.live-view .substitution-box{display:none!important}.live-view [data-sqadd],.live-view [data-sqadd-sub],.live-view [data-sqedit],.live-view [data-sqdel],.live-view [data-sqedit-sub],.live-view [data-sqdel-sub]{pointer-events:none!important}
 </style>
 <style id="funky-manager-profiles">.manager-profile-grid{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))!important;gap:24px!important}.manager-profile-card{position:relative!important;overflow:hidden!important;min-height:500px!important;border-radius:28px!important;padding:0!important;background:linear-gradient(145deg,rgba(20,24,38,.98),rgba(10,12,22,.98))!important;border:1px solid rgba(255,255,255,.14)!important;box-shadow:0 18px 50px rgba(0,0,0,.35)!important;transition:transform .22s ease,box-shadow .22s ease!important}.manager-profile-card:hover{transform:translateY(-6px) scale(1.01)!important;box-shadow:0 26px 65px rgba(0,0,0,.5)!important}.manager-profile-card .manager-photo,.manager-profile-card img{width:100%!important;height:340px!important;object-fit:cover!important;object-position:center top!important;display:block!important;border-radius:0!important}.manager-profile-card::after{content:""!important;position:absolute!important;left:0;right:0;top:250px;height:150px;background:linear-gradient(transparent,rgba(10,12,22,.96))!important;pointer-events:none!important}.manager-profile-card .manager-info,.manager-profile-card .profile-info{position:relative!important;z-index:2!important;padding:18px 22px 24px!important;margin-top:-12px!important}.manager-profile-card .manager-name,.manager-profile-card .profile-name{font-size:28px!important;font-weight:900!important;letter-spacing:-.5px!important}.manager-profile-card .team-name{font-size:15px!important;font-weight:700!important;opacity:.9!important;margin-top:6px!important}.manager-profile-card .history,.manager-profile-card .profile-history{margin-top:14px!important;padding-top:12px!important;border-top:1px solid rgba(255,255,255,.12)!important}.manager-profile-card .history span,.manager-profile-card .profile-history span{display:inline-block!important;margin-right:8px!important;margin-bottom:6px!important;padding:5px 9px!important;border-radius:999px!important;background:rgba(255,255,255,.08)!important}@media(max-width:650px){.manager-profile-card .manager-photo,.manager-profile-card img{height:300px!important}}</style>
 </head>
@@ -455,7 +455,7 @@ table.xl{border-collapse:separate;border-spacing:0;font-size:12px;table-layout:f
 const LS_KEY = "rostrum-fpl-2627";
 const SHARED_STATE_URL = "https://pirlo-fpl-api.aanish0007.workers.dev/auction-state";
 const SHARED_STATE_KEY = "3a19uoe284PVE8It-itgdON-MjCd-Py9";
-const LIVE_VIEW = new URLSearchParams(location.search).get("live") === "1";
+const LIVE_VIEW = new URLSearchParams(location.search).get("live") === "1" || location.hash === "#squads-live";
 let sharedPublishTimer = null;
 const POS = ["GK","DEF","MID","FWD"];
 const SUB_POS = ["DEF","MID","FWD"];
@@ -665,18 +665,12 @@ function tierFor(price){
       (position quota x managers, minus guaranteed players already covering it).
    3) If guaranteed players alone exceed the target, the pool runs over - by design. */
 function trimPool(list){
+  // Target pool is a HARD CAP. Every premium/Tier 1 player is always included
+  // first, then Tier 2 players, then Tier 3 players fill the remaining slots.
+  // Within each tier, early-season performers are preferred, then price/points.
   const target = Math.min(S.settings.targetPool || 200, list.length);
-  const gmin   = S.settings.guaranteeMin || 6.0;
   const q = S.settings.quota, n = S.participants.length || 8;
-
-  // HARD RULE: every premium player at/above the guarantee price must be in
-  // the auction pool. These players are never sacrificed for tier balancing.
-  const premium = list.filter(p=>p.price >= gmin);
-
-  // If the requested target is smaller than the number of premium players,
-  // we cannot satisfy both requirements. In that unusual case, keep all
-  // premium players rather than silently dropping them.
-  const effectiveTarget = Math.max(target, premium.length);
+  const [t1,t2] = S.settings.tiers;
 
   const priority = (a,b)=>
     Number(b.earlyProtected)-Number(a.earlyProtected) ||
@@ -684,74 +678,34 @@ function trimPool(list){
     (b.earlyTotal||0)-(a.earlyTotal||0) ||
     (b.pts||0)-(a.pts||0);
 
-  const selected = new Set(premium.map(p=>p.id));
+  const selected = new Set();
 
-  // Work out how many players are still needed at each position. Premium
-  // players already count toward those position requirements.
-  const posNeed = {};
-  for(const ps of POS){
-    const have = premium.filter(p=>p.pos===ps).length;
-    posNeed[ps] = Math.max(0, (q[ps]||0)*n - have);
-  }
-
-  // Remaining players, grouped by tier. Premium players are already selected,
-  // so this stage is only deciding which cheaper players fill the pool.
-  const byTier = {1:[],2:[],3:[]};
-  list.forEach(p=>{
-    if(selected.has(p.id)) return;
-    const t = Number(p.tier) || tierFor(p.price);
-    (byTier[t] || byTier[3]).push(p);
-  });
-  for(const t of [1,2,3]) byTier[t].sort(priority);
-
-  let remaining = Math.max(0, effectiveTarget - selected.size);
-
-  // First make sure every position has enough players for all managers.
-  // Choose the strongest available player for each required position, while
-  // considering all tiers so we don't create a positional shortage.
-  while(remaining > 0 && Object.values(posNeed).some(v=>v>0)){
-    let best=null, bestPos=null;
-    for(const ps of POS){
-      if(posNeed[ps]<=0) continue;
-      for(const t of [1,2,3]){
-        const cand=byTier[t].find(p=>p.pos===ps);
-        if(cand && (!best || priority(cand,best)<0)){
-          best=cand; bestPos=ps;
-        }
-      }
-    }
-    if(!best) break;
-    selected.add(best.id);
-    byTier[best.tier].splice(byTier[best.tier].indexOf(best),1);
-    posNeed[bestPos]--;
-    remaining--;
-  }
-
-  // Fill the rest with a genuinely balanced mix of T1/T2/T3. We use equal
-  // absolute tier targets where possible, but never remove a premium player.
-  // If a tier runs short, its unused slots are redistributed to other tiers.
-  const currentTier = {1:0,2:0,3:0};
-  premium.forEach(p=>currentTier[p.tier]++);
-
-  while(remaining > 0){
-    const availableTiers=[1,2,3].filter(t=>byTier[t].length>0);
-    if(!availableTiers.length) break;
-
-    // Prefer the tier currently furthest below an equal final count.
-    availableTiers.sort((a,b)=>currentTier[a]-currentTier[b] || a-b);
-    const t=availableTiers[0];
-    const p=byTier[t].shift();
+  // Premium/Tier 1 players are mandatory in the shortlist, provided they fit
+  // inside the hard target. This prevents any T1 player being left in Remaining.
+  const premium = list.filter(p=>p.price>=t1).sort(priority);
+  for(const p of premium){
+    if(selected.size>=target) break;
     selected.add(p.id);
-    currentTier[t]++;
-    remaining--;
   }
 
-  // Exact hard-cap safety. This is only reachable if position/tier constraints
-  // above could not consume the requested number of players.
-  if(selected.size < effectiveTarget){
-    for(const p of [...list].sort(priority)){
-      if(selected.size>=effectiveTarget) break;
-      if(!selected.has(p.id)) selected.add(p.id);
+  // Then prioritize Tier 2, while making sure every position has enough
+  // players for all managers' starting-squad quotas.
+  for(const ps of POS){
+    const need = Math.min((q[ps]||0)*n, target-selected.size);
+    const candidates = list
+      .filter(p=>p.pos===ps && !selected.has(p.id) && p.price>=t2 && p.price<t1)
+      .sort(priority);
+    for(let i=0; i<need && i<candidates.length; i++) selected.add(candidates[i].id);
+  }
+
+  // Fill any remaining slots with the strongest Tier 2 players first, then T3.
+  if(selected.size < target){
+    const remaining = list.filter(p=>!selected.has(p.id)).sort((a,b)=>
+      (tierFor(b.price)-tierFor(a.price)) || priority(a,b)
+    );
+    for(const p of remaining){
+      if(selected.size>=target) break;
+      selected.add(p.id);
     }
   }
 
@@ -761,7 +715,6 @@ function trimPool(list){
     (b.pts||0)-(a.pts||0)
   );
 }
-
 async function loadFromFPL(auto){
   const st = $("#loadStatus");
   if(!auto) st.textContent = "Fetching FPL player data…";
@@ -1837,6 +1790,12 @@ document.addEventListener("keydown",e=>{
   if(e.key==="Enter"){ clearInterval(timerH); hammer(); }
 });
 
+/* Live viewer is strictly read-only. Block any squad mutation controls even if stale UI is present. */
+document.addEventListener("click", e=>{
+  if(!LIVE_VIEW) return;
+  const t=e.target.closest("[data-sqadd],[data-sqadd-sub],[data-sqedit],[data-sqdel],[data-sqedit-sub],[data-sqdel-sub],#sqSave,#sqCancel,#btnSubstitute");
+  if(t){ e.preventDefault(); e.stopPropagation(); }
+}, true);
 /* ============================== INIT ============================== */
 normalizeIds();
 document.documentElement.dataset.theme=S.theme;
