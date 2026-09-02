@@ -1913,7 +1913,11 @@ document.addEventListener("click", e=>{
       S.participants.forEach(m=>{m.budget=S.settings.budget; m.spent=0;});
       S.log=[]; S.board=null; S.onBlock=null; S.qIndex=0; S.started=false; S.mainAuctionComplete=false; S.poolLocked=false;
       S.queueBuilt=Array.isArray(S.queue)&&S.queue.length>0;
-      save(); document.documentElement.dataset.theme=S.theme; switchView("setup");
+      save();
+      // RESET must immediately replace the Cloudflare shared state so Manager View
+      // cannot continue showing the previous auction.
+      publishSharedNow().catch(()=>{});
+      document.documentElement.dataset.theme=S.theme; switchView("setup");
       toast(S.queueBuilt ? "Auction reset ✓ Same prepared pool is ready to test again." : "Auction reset ✓ Build a queue when ready.");
     }
   }
