@@ -1895,6 +1895,22 @@ document.addEventListener("click", e=>{
   const btn=e.target.closest("[data-profile-save]");
   if(!btn || LIVE_VIEW) return;
   const mid=+btn.dataset.profileSave;
+  const manager=partById(mid);
+  if(!manager) return;
+
+  // Explicitly read the currently displayed profile form before publishing.
+  // This avoids relying on blur/change events and guarantees team name + history
+  // are included in the exact snapshot sent to Manager View.
+  const pr=profileFor(manager);
+  const teamInput=document.querySelector(`[data-profile-team="${mid}"]`);
+  if(teamInput) pr.teamName=teamInput.value.trim();
+  if(!pr.history) pr.history={};
+  ["2025/26","2024/25","2023/24"].forEach(season=>{
+    const input=document.querySelector(`[data-profile-rank="${mid}|${season}"]`);
+    if(input) pr.history[season]=input.value.trim();
+  });
+
+  // Persist locally first, then publish the complete profile state immediately.
   localStorage.setItem(LS_KEY, JSON.stringify(S));
   btn.disabled=true;
   const status=document.querySelector(`[data-profile-save-status="${mid}"]`);
@@ -1902,11 +1918,11 @@ document.addEventListener("click", e=>{
   Promise.resolve(publishSharedNow()).then(()=>{
     btn.disabled=false;
     if(status) status.textContent="Published ✓";
-    toast("Manager profiles published to Manager View ✓");
+    toast(`${manager.name}'s profile published to Manager View ✓`);
   }).catch(()=>{
     btn.disabled=false;
     if(status) status.textContent="Publish failed — try again";
-    toast("Could not publish profiles. Try again.");
+    toast("Could not publish profile. Check the connection and try again.");
   });
 });
 document.addEventListener("change", e=>{
