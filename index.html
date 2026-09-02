@@ -252,11 +252,48 @@ table.xl{border-collapse:separate;border-spacing:0;font-size:12px;table-layout:f
 @media (max-width:1080px){.auction-grid{grid-template-columns:1fr}.setup-grid{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 :focus-visible{outline:2px solid var(--turf);outline-offset:2px}
-.live-view #nav,.live-view .hspacer,.live-view #btnExport,.live-view #btnImport,.live-view #btnReset,.live-view #btnTheme{display:none!important}
+.live-view #nav{display:none!important}
+#liveNav{display:none;gap:6px;align-items:center}
+#liveNav button{border:1px solid var(--line);background:var(--panel);color:var(--muted);padding:8px 12px;border-radius:999px;font-family:'Chakra Petch';font-weight:800;cursor:pointer}
+#liveNav button.on{background:var(--turf);color:#07110b;border-color:var(--turf)}
+.live-view #liveNav{display:flex!important}
+.live-view .hspacer,.live-view #btnExport,.live-view #btnImport,.live-view #btnReset,.live-view #btnTheme{display:none!important}
 .live-view .viewbar .hbtn{display:none!important}
+.live-view .live-pool-note{display:block!important}
 .live-view .sq-card .cellbtns,.live-view .sqadd,.live-view .subsection,.live-view .substitution-box{display:none!important}.live-view [data-sqadd],.live-view [data-sqadd-sub],.live-view [data-sqedit],.live-view [data-sqdel],.live-view [data-sqedit-sub],.live-view [data-sqdel-sub]{pointer-events:none!important}
 </style>
-<style id="funky-manager-profiles">.manager-profile-grid{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))!important;gap:24px!important}.manager-profile-card{position:relative!important;overflow:hidden!important;min-height:500px!important;border-radius:28px!important;padding:0!important;background:linear-gradient(145deg,rgba(20,24,38,.98),rgba(10,12,22,.98))!important;border:1px solid rgba(255,255,255,.14)!important;box-shadow:0 18px 50px rgba(0,0,0,.35)!important;transition:transform .22s ease,box-shadow .22s ease!important}.manager-profile-card:hover{transform:translateY(-6px) scale(1.01)!important;box-shadow:0 26px 65px rgba(0,0,0,.5)!important}.manager-profile-card .manager-photo,.manager-profile-card img{width:100%!important;height:340px!important;object-fit:cover!important;object-position:center top!important;display:block!important;border-radius:0!important}.manager-profile-card::after{content:""!important;position:absolute!important;left:0;right:0;top:250px;height:150px;background:linear-gradient(transparent,rgba(10,12,22,.96))!important;pointer-events:none!important}.manager-profile-card .manager-info,.manager-profile-card .profile-info{position:relative!important;z-index:2!important;padding:18px 22px 24px!important;margin-top:-12px!important}.manager-profile-card .manager-name,.manager-profile-card .profile-name{font-size:28px!important;font-weight:900!important;letter-spacing:-.5px!important}.manager-profile-card .team-name{font-size:15px!important;font-weight:700!important;opacity:.9!important;margin-top:6px!important}.manager-profile-card .history,.manager-profile-card .profile-history{margin-top:14px!important;padding-top:12px!important;border-top:1px solid rgba(255,255,255,.12)!important}.manager-profile-card .history span,.manager-profile-card .profile-history span{display:inline-block!important;margin-right:8px!important;margin-bottom:6px!important;padding:5px 9px!important;border-radius:999px!important;background:rgba(255,255,255,.08)!important}@media(max-width:650px){.manager-profile-card .manager-photo,.manager-profile-card img{height:300px!important}}</style>
+
+<style id="poker-theme">
+body{position:relative;overflow-x:hidden}
+body::before{content:"♠    ♥    ♦    ♣";position:fixed;inset:0;z-index:-2;pointer-events:none;font-family:Georgia,serif;font-size:clamp(70px,10vw,150px);letter-spacing:clamp(25px,5vw,80px);line-height:1.8;text-align:center;color:rgba(255,210,87,.025);transform:rotate(-12deg);white-space:pre-wrap}
+body::after{content:"";position:fixed;inset:0;z-index:-3;pointer-events:none;background:radial-gradient(circle at 12% 88%,rgba(0,255,135,.08),transparent 22%),radial-gradient(circle at 88% 12%,rgba(255,206,77,.07),transparent 24%),linear-gradient(120deg,transparent 0 47%,rgba(255,255,255,.018) 50%,transparent 53%);}
+[data-theme="dark"] body{background-color:#080d0c;background-image:radial-gradient(ellipse 80% 60% at 50% -15%,rgba(0,255,135,.10),transparent),radial-gradient(circle at 10% 100%,rgba(255,206,77,.07),transparent 28%),radial-gradient(circle at 90% 70%,rgba(122,47,240,.07),transparent 25%)}
+header{box-shadow:0 6px 30px rgba(0,0,0,.28)}
+.card,.rostrum{box-shadow:0 10px 35px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.03)}
+.card::before,.rostrum::after{content:"♠";float:right;color:var(--gold);opacity:.18;font-family:Georgia,serif;font-size:28px;pointer-events:none}
+.squad-mini{display:grid!important;grid-template-columns:1fr 1fr;gap:7px!important;max-height:none!important;overflow:visible!important}
+.squad-mini .sqrow{min-height:58px;padding:8px 9px!important;border-radius:10px!important;border:1px solid var(--line);background:linear-gradient(145deg,var(--card2),rgba(0,0,0,.08));}
+.squad-mini .sqrow .top{font-size:12px!important}.squad-mini .sqrow .bot{font-size:10px!important;gap:4px}.squad-mini .needbar{height:4px!important;margin-top:5px!important}
+.auction-grid{grid-template-columns:250px minmax(0,1fr) 360px}
+@media(max-width:1120px){.auction-grid{grid-template-columns:1fr}.squad-mini{grid-template-columns:repeat(4,1fr)!important}}
+@media(max-width:700px){.squad-mini{grid-template-columns:1fr 1fr!important}}
+</style>
+<style id="funky-manager-profiles">
+.profile-shell{display:grid;grid-template-columns:260px minmax(0,1fr);gap:16px;align-items:start}
+.profile-sidebar{position:sticky;top:82px;background:rgba(8,13,12,.94);border:1px solid var(--line);border-radius:18px;padding:12px;box-shadow:0 14px 35px rgba(0,0,0,.28);overflow:hidden}
+.profile-side-title{font-family:'Chakra Petch';font-weight:800;letter-spacing:1.5px;padding:8px 8px 12px;color:var(--gold)}.profile-side-title span{color:var(--turf);margin-right:7px}.profile-side-title small{color:var(--muted);font-size:10px}
+.profile-manager-row{width:100%;display:flex;align-items:center;gap:10px;padding:10px 9px;margin:3px 0;border:1px solid transparent;border-radius:13px;text-align:left;background:transparent;transition:.18s}.profile-manager-row:hover{background:var(--card2);border-color:var(--line)}.profile-manager-row.active{background:linear-gradient(100deg,rgba(0,255,135,.13),rgba(255,206,77,.04));border-color:var(--turf);box-shadow:inset 0 0 20px rgba(0,255,135,.05)}
+.pm-avatar{width:44px;height:44px;flex:0 0 44px;border-radius:10px;border:1px solid var(--line);background:var(--card2);display:flex;align-items:center;justify-content:center;font-family:'Chakra Petch';font-weight:800;overflow:hidden;color:var(--gold)}.pm-avatar img{width:100%;height:100%;object-fit:cover}.pm-copy{min-width:0;display:flex;flex-direction:column}.pm-copy b{font-family:'Chakra Petch';font-size:14px}.pm-copy small{color:var(--muted);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pm-trophy{margin-left:auto;font-size:12px;white-space:nowrap;color:var(--gold)}
+.profile-main{min-width:0}.profile-stage{--accent:var(--turf);--accent-soft:rgba(0,255,135,.11);background:linear-gradient(145deg,rgba(8,13,12,.97),rgba(18,11,28,.97));border:1px solid var(--line);border-radius:22px;padding:16px;box-shadow:0 18px 55px rgba(0,0,0,.34);position:relative;overflow:hidden}.profile-stage::before{content:"♠  ♥  ♦  ♣";position:absolute;right:-10px;top:-20px;font:100px Georgia,serif;letter-spacing:22px;color:var(--accent);opacity:.035;pointer-events:none;transform:rotate(-8deg)}
+.profile-accent-green{--accent:#00ff87;--accent-soft:rgba(0,255,135,.12)}.profile-accent-blue{--accent:#4da3ff;--accent-soft:rgba(77,163,255,.12)}.profile-accent-red{--accent:#ff5f6d;--accent-soft:rgba(255,95,109,.12)}.profile-accent-gold{--accent:#ffd257;--accent-soft:rgba(255,210,87,.12)}.profile-accent-purple{--accent:#b77cff;--accent-soft:rgba(183,124,255,.12)}.profile-accent-cyan{--accent:#35e5ff;--accent-soft:rgba(53,229,255,.12)}.profile-accent-orange{--accent:#ff9d4d;--accent-soft:rgba(255,157,77,.12)}.profile-accent-pink{--accent:#ff70c8;--accent-soft:rgba(255,112,200,.12)}
+.profile-hero-row{display:grid;grid-template-columns:minmax(380px,1.1fr) minmax(220px,.55fr);gap:14px}.hero-card{min-height:470px;position:relative;overflow:hidden;border-radius:20px;border:1px solid color-mix(in srgb,var(--accent) 50%,var(--line));background:radial-gradient(circle at 72% 24%,var(--accent-soft),transparent 28%),linear-gradient(145deg,#111714,#070b0a);box-shadow:inset 0 0 45px var(--accent-soft),0 14px 38px rgba(0,0,0,.35)}.hero-card-bg{position:absolute;inset:0;display:flex;justify-content:space-between;padding:18px 22px;font:80px Georgia,serif;color:var(--accent);opacity:.08}.hero-topline{position:absolute;top:16px;left:16px;right:16px;display:flex;justify-content:space-between;z-index:2}.rating-chip{border:1px solid var(--accent);color:var(--accent);border-radius:50%;width:64px;height:64px;display:flex;align-items:center;justify-content:center;font:800 22px 'Chakra Petch';background:rgba(0,0,0,.45);box-shadow:0 0 24px var(--accent-soft)}.hero-suit{font:48px Georgia,serif;color:var(--accent)}.hero-photo-wrap{position:absolute;left:8%;right:8%;top:45px;bottom:105px;display:flex;align-items:flex-end;justify-content:center;overflow:hidden}.hero-photo{width:100%;height:100%;object-fit:contain;object-position:center bottom;filter:drop-shadow(0 18px 25px rgba(0,0,0,.55))}.hero-photo-fallback{width:230px;height:320px;border-radius:18px;background:linear-gradient(145deg,var(--accent-soft),rgba(0,0,0,.35));border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line));display:flex;align-items:center;justify-content:center;font:900 86px 'Chakra Petch';color:var(--accent)}.hero-nameplate{position:absolute;left:5%;right:5%;bottom:17px;padding:13px 18px;text-align:center;border:1px solid color-mix(in srgb,var(--accent) 55%,var(--line));border-radius:15px;background:linear-gradient(180deg,rgba(8,12,10,.72),rgba(8,12,10,.98));box-shadow:0 -12px 30px rgba(0,0,0,.35)}.hero-name{font:900 clamp(30px,4vw,54px)/1 'Chakra Petch';letter-spacing:2px}.hero-team{margin-top:5px;color:var(--accent);font:800 17px 'Chakra Petch';letter-spacing:2px}.hero-meta{font-size:9px;color:var(--muted);letter-spacing:2px;margin-top:4px}.hero-chips{position:absolute;bottom:8px;left:14px;display:flex;gap:7px;color:var(--gold);font:16px Georgia,serif}
+.profile-quick{display:grid;gap:10px;align-content:start}.quote-card,.quick-stat{border:1px solid var(--line);border-radius:15px;background:rgba(0,0,0,.22);padding:15px}.quote-card{min-height:125px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}.quote-card span{font:28px Georgia;color:var(--accent);line-height:.7}.quote-card b{font:800 18px 'Chakra Petch';letter-spacing:2px;margin:6px 0;color:var(--accent)}.quote-card small{color:var(--muted);font-style:italic}.quick-stat{display:flex;align-items:center;gap:12px}.quick-stat>span{font:27px Georgia;color:var(--accent)}.quick-stat small{display:block;color:var(--muted);font:600 9px 'Chakra Petch';letter-spacing:1.5px}.quick-stat b{font:800 19px 'Chakra Petch';display:block;margin-top:2px}.profile-actions{display:flex;gap:8px;flex-wrap:wrap}.photo-btn{font-size:12px;padding:9px 12px}
+.profile-info-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:14px;margin-top:14px}.profile-panel{border:1px solid var(--line);border-radius:17px;background:rgba(0,0,0,.18);padding:14px;min-width:0}.panel-title{font:800 14px 'Chakra Petch';letter-spacing:1.5px;color:var(--accent);margin-bottom:11px;display:flex;justify-content:space-between;gap:10px}.panel-title span{font-size:9px;color:var(--muted);letter-spacing:1px;align-self:center}.trophy-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.trophy-card{text-align:center;padding:10px 5px;border:1px solid var(--line);border-radius:12px;background:rgba(0,0,0,.18)}.trophy-card.won{border-color:var(--gold);background:linear-gradient(180deg,rgba(255,210,87,.12),rgba(0,0,0,.16));box-shadow:0 0 20px rgba(255,210,87,.08)}.trophy-icon{font-size:36px;filter:grayscale(1);opacity:.45}.trophy-card.won .trophy-icon{filter:none;opacity:1}.trophy-card b{display:block;font:800 11px 'Chakra Petch';color:var(--gold)}.trophy-card span{font-size:9px;color:var(--muted)}.trophy-card.won span{color:var(--accent);font-weight:800}.stand-medal{font-size:17px}.champ-pos{color:var(--accent)}.champion-badge{display:inline-block;font:800 8px 'Chakra Petch';padding:3px 6px;border-radius:99px;background:var(--accent-soft);color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 35%,transparent)}.history-edit{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}.history-edit .field{margin:0}.history-edit .field label{font-size:9px}.history-edit input{padding:6px 7px;font-size:12px}
+.squad-panel{margin-top:14px}.squad-profile-grid{display:grid;grid-template-columns:180px minmax(0,1fr);gap:12px}.position-summary{display:grid;grid-template-columns:1fr 1fr;gap:7px}.position-summary>div{border:1px solid var(--line);border-radius:11px;padding:9px;background:linear-gradient(145deg,var(--card2),rgba(0,0,0,.08));display:flex;flex-direction:column;justify-content:center}.position-summary b{font:800 11px 'Chakra Petch';color:var(--accent)}.position-summary span{font:800 18px 'Chakra Petch';margin-top:2px}.profile-table-wrap{overflow:auto;max-height:310px;border:1px solid var(--line);border-radius:11px}.profile-table-wrap table{min-width:500px}.profile-table-wrap td,.profile-table-wrap th{padding:7px 9px}.profile-footer{text-align:center;margin-top:11px;padding:9px;border:1px solid var(--line);border-radius:12px;color:var(--muted);font:10px 'Chakra Petch';letter-spacing:.7px}.profile-footer b{color:var(--accent)}
+@media(max-width:1000px){.profile-shell{grid-template-columns:1fr}.profile-sidebar{position:relative;top:auto;display:flex;overflow:auto;gap:6px}.profile-side-title{display:none}.profile-manager-row{min-width:180px;margin:0}.profile-hero-row{grid-template-columns:1fr}.profile-quick{grid-template-columns:1fr 1fr}.quote-card{grid-column:1/-1}.profile-actions{grid-column:1/-1}}
+@media(max-width:700px){.profile-info-grid,.squad-profile-grid{grid-template-columns:1fr}.profile-quick{grid-template-columns:1fr 1fr}.history-edit{grid-template-columns:1fr}.hero-card{min-height:400px}.hero-photo-wrap{bottom:95px}.hero-name{font-size:32px}.trophy-row{grid-template-columns:1fr 1fr 1fr}}
+@media(max-width:480px){.profile-quick{grid-template-columns:1fr}.quote-card{grid-column:auto}.profile-manager-row{min-width:155px}.pm-copy small{max-width:80px}}
+</style>
 </head>
 <body>
 
@@ -266,10 +303,14 @@ table.xl{border-collapse:separate;border-spacing:0;font-size:12px;table-layout:f
     <nav id="nav">
       <button data-v="setup" class="on">Setup</button>
       <button data-v="auction">Auction</button>
-      <button data-v="players">Player Pool</button>
-      <button data-v="remaining">Remaining</button>
+      <button data-v="players">Auction Pool</button>
+      <button data-v="remaining">Reserve Pool</button>
       <button data-v="squads">Squads</button>
       <button data-v="profiles">Manager Profiles</button>
+    </nav>
+    <nav id="liveNav" aria-label="Manager view">
+      <button data-v="squads" class="on">Squads</button>
+      <button data-v="players">Auction Pool</button>
     </nav>
     <div class="hspacer"></div>
     <button class="hbtn" id="btnExport" title="Download the full auction state as an Excel file">Export .xlsx</button>
@@ -302,10 +343,10 @@ table.xl{border-collapse:separate;border-spacing:0;font-size:12px;table-layout:f
           <div class="field"><label>Tier 2 from (£m)</label><input type="number" id="tT2" step="0.5" value="5.5"></div>
         </div>
         <div class="frow">
-          <div class="field"><label>Target pool size</label><input type="number" id="setTarget" value="200"></div>
+          <div class="field"><label>Target pool size</label><input type="number" id="setTarget" value="220"></div>
           <div class="field"><label>Always include players ≥ (£m)</label><input type="number" id="setGuarantee" step="0.5" value="6.0"></div>
         </div>
-        <p class="muted small"><b>Target pool size controls the main auction only.</b> The complete FPL source is retained separately. Players outside the selected pool appear in the <b>Remaining</b> tab and can be nominated after the main auction finishes.</p>
+        <p class="muted small"><b>Target pool size controls the main auction only.</b> The complete FPL source is retained separately. Players outside the selected pool appear in the <b>Reserve Pool</b> tab and can be nominated after the main auction finishes.</p>
       </div>
 
       <div class="card">
@@ -379,6 +420,9 @@ table.xl{border-collapse:separate;border-spacing:0;font-size:12px;table-layout:f
 <!-- ================= PLAYERS ================= -->
 <section class="view" id="v-players">
   <div class="card">
+    <div class="live-pool-note" id="livePoolNote" style="display:none;margin-bottom:14px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--panel2)">
+      <b>Auction Pool</b> · These are the players selected for the main auction. The order is sealed. Players already sold are hidden by default; use “Everything” to see the full 220-player pool.
+    </div>
     <div class="filters">
       <input type="search" id="fSearch" placeholder="Search player or team…">
       <select id="fPos"><option value="">All positions</option><option>GK</option><option>DEF</option><option>MID</option><option>FWD</option></select>
@@ -430,17 +474,13 @@ table.xl{border-collapse:separate;border-spacing:0;font-size:12px;table-layout:f
 </section>
 
 <!-- ================= MANAGER PROFILES ================= -->
-<section class="view" id="v-profiles">
-  <div class="card">
-    <div class="viewbar">
-      <div>
-        <span class="eyebrow">Manager profiles</span>
-        <div class="small muted" style="margin-top:3px">Eight managers · photo + historical FPL Draft league finishes. Photos are stored locally in this auction state; historical ranks must be entered from your league records.</div>
-      </div>
-      <button class="hbtn" data-refresh="profiles">⟳ Refresh</button>
-    </div>
-    <div class="profile-note small"><b>Historical positions:</b> the app cannot infer your private FPL Draft league's finishing positions from the public FPL player API. Enter the final league rank for 2024/25 and 2025/26 below. Example: <span class="mono">1</span> = champion, <span class="mono">8</span> = eighth.</div>
-    <div id="profilesGrid" class="profile-grid"></div>
+<section class="view wide" id="v-profiles">
+  <div class="profile-shell">
+    <aside class="profile-sidebar">
+      <div class="profile-side-title"><span>♠</span> MANAGERS <small>(8/8)</small></div>
+      <div id="profileManagerList"></div>
+    </aside>
+    <div class="profile-main" id="profilesGrid"></div>
   </div>
 </section>
 
@@ -455,12 +495,12 @@ table.xl{border-collapse:separate;border-spacing:0;font-size:12px;table-layout:f
 const LS_KEY = "rostrum-fpl-2627";
 const SHARED_STATE_URL = "https://pirlo-fpl-api.aanish0007.workers.dev/auction-state";
 const SHARED_STATE_KEY = "3a19uoe284PVE8It-itgdON-MjCd-Py9";
-const LIVE_VIEW = new URLSearchParams(location.search).get("live") === "1" || location.hash === "#squads-live";
+const LIVE_VIEW = new URLSearchParams(location.search).get("live") === "1" || location.hash === "#squads-live" || location.hash === "#players-live";
 let sharedPublishTimer = null;
 const POS = ["GK","DEF","MID","FWD"];
 const SUB_POS = ["DEF","MID","FWD"];
-const DEFAULT_NAMES = ["Anish","Aakash","Abhi","Kishu","Kumar","Shanky","Vichu","Vinod"];
-const FIXED_MANAGER_NAMES = ["Anish","Aakash","Abhi","Kishu","Kumar","Shanky","Vichu","Vinod"];
+const DEFAULT_NAMES = ["Aakash","Abhi","Anish","Kumar","Kishu","Shanky","Vichu","Vinod"];
+const FIXED_MANAGER_NAMES = ["Aakash","Abhi","Anish","Kumar","Kishu","Shanky","Vichu","Vinod"];
 let S = load() || freshState();
 // Keep the complete FPL/API dataset separately from the selected auction pool.
 // This lets the user change Target Pool (e.g. 220 -> 200) without refetching,
@@ -476,7 +516,7 @@ function freshState(){
     allPlayers: [],         // complete dataset fetched from FPL/API
     rawLoaded: false,
     participants: DEFAULT_NAMES.map((n,i)=>({id:i+1,name:n,budget:100,spent:0})),
-    profiles: Object.fromEntries(DEFAULT_NAMES.map((n,i)=>[i+1,{photo:"",teamName:"",history:{"2024/25":"","2025/26":""}}])),
+    profiles: Object.fromEntries(DEFAULT_NAMES.map((n,i)=>[i+1,{photo:"",teamName:"",history:{"2023/24":"","2024/25":"","2025/26":""}}])),
     subs: {},              // managerId -> {DEF: playerId|null, MID: playerId|null, FWD: playerId|null}
     subHistory: [],        // {managerId,outId,inId,ts}
     settings: {budget:100, timer:20, timerT1:20, timerT2:15, timerT3:10, openBid:1, minBid:1, quota:{GK:2,DEF:5,MID:5,FWD:3}, minPrice:4.0, tiers:[7.5,5.5], targetPool:200, guaranteeMin:6.0, earlyGW:2, earlyPoints:6, sound:true},
@@ -488,6 +528,7 @@ function freshState(){
     started: false,
     mainAuctionComplete: false,
     view: "setup",
+    profileSelected: 1,
     theme: (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
   };
 }
@@ -521,7 +562,7 @@ function migrate(s){
     s.participants[i].name=name;
   });
   s.profiles = s.profiles || {};
-  s.participants.forEach(m=>{ s.profiles[m.id] = Object.assign({photo:"",teamName:"",history:{"2024/25":"","2025/26":""}}, s.profiles[m.id]||{}); s.profiles[m.id].history=Object.assign({"2024/25":"","2025/26":""}, s.profiles[m.id].history||{}); });
+  s.participants.forEach(m=>{ s.profiles[m.id] = Object.assign({photo:"",teamName:"",history:{"2023/24":"","2024/25":"","2025/26":""}}, s.profiles[m.id]||{}); s.profiles[m.id].history=Object.assign({"2023/24":"","2024/25":"","2025/26":""}, s.profiles[m.id].history||{}); });
   return s;
 }
 function save(){
@@ -540,8 +581,6 @@ function publicState(){
       tier:p.tier, photo:p.photo, status:p.status, ownerId:p.ownerId, paid:p.paid
     })),
     settings: { quota: S.settings.quota },
-    subs: S.subs || {},
-    subHistory: S.subHistory || [],
     started: !!S.started,
     mainAuctionComplete: !!S.mainAuctionComplete,
     log: (S.log||[]).slice(0,200)
@@ -585,10 +624,11 @@ async function loadSharedState(){
     if(!r.ok) throw new Error("HTTP "+r.status);
     const data=await r.json();
     if(!data || !Array.isArray(data.players) || !Array.isArray(data.participants)) throw new Error("Invalid shared state");
+    const liveTab = (S.view === "players") ? "players" : "squads";
     S=migrate(data);
-    S.view="squads";
+    S.view=liveTab;
     normalizeIds();
-    renderSquads();
+    renderView(liveTab);
     const stamp=data.updatedAt?new Date(data.updatedAt).toLocaleTimeString():"";
     const el=$("#liveUpdated");
     if(el) el.textContent=stamp?`Last updated ${stamp}`:"Live";
@@ -1280,14 +1320,14 @@ function undoLast(){
 
 /* ============================== RENDER ============================== */
 function switchView(v){
-  if(LIVE_VIEW) v="squads";
+  if(LIVE_VIEW && !["squads","players"].includes(v)) v="squads";
   if(!document.getElementById("v-"+v)) v="setup";
   S.view=v;
   if(!LIVE_VIEW) save();
-  if(!LIVE_VIEW && location.hash!=="#"+v) history.replaceState(null,"","#"+v);
+  if(location.hash!=="#"+v && !LIVE_VIEW) history.replaceState(null,"","#"+v);
   document.querySelectorAll(".view").forEach(el=>el.classList.remove("on"));
   $("#v-"+v).classList.add("on");
-  document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===v));
+  document.querySelectorAll("#nav button,#liveNav button").forEach(b=>b.classList.toggle("on",b.dataset.v===v));
   renderView(v);
 }
 function renderView(v){
@@ -1400,6 +1440,13 @@ function renderAuction(){
 
 let sortKey="price", sortDir=-1;
 function renderPool(){
+  if(LIVE_VIEW){
+    const note=$("#livePoolNote");
+    if(note){
+      const available=S.players.filter(p=>p.status==="available").length;
+      note.innerHTML=`<b>Auction Pool</b> · <b>${S.players.length}</b> players were selected for the main auction · <b>${available}</b> still available to come up. The order is sealed.`;
+    }
+  }
   // (re)populate club filter, preserving selection
   const clubSel=$("#fClub"), prevClub=clubSel.value;
   const clubs=[...new Set(S.players.map(p=>p.team))].sort();
@@ -1481,7 +1528,7 @@ function renderSquads(){
     return {m, byPos};
   });
   const totalSlots=Object.values(q).reduce((a,b)=>a+b,0);
-  let html=`<div class="small muted" style="margin-bottom:10px"><b>Starting squad:</b> 15 players (${q.GK} GK · ${q.DEF} DEF · ${q.MID} MID · ${q.FWD} FWD). Each manager may optionally buy <b>3 substitutes</b>: 1 DEF, 1 MID and 1 FWD. Substitutes do not score until used.</div>`;
+  let html=`<div class="small muted" style="margin-bottom:10px"><b>Squad:</b> exactly 15 players (${q.GK} GK · ${q.DEF} DEF · ${q.MID} MID · ${q.FWD} FWD). <b>No substitutes.</b></div>`;
   html+=`<table class="xl"><thead><tr><th>Slot</th>${cols.map(c=>`<th>${esc(c.m.name)}</th>`).join("")}</tr></thead><tbody>`;
   slots.forEach(sl=>{
     html+=`<tr><td class="pos-${sl.pos}">${sl.pos} ${sl.n}</td>`;
@@ -1493,8 +1540,7 @@ function renderSquads(){
         const cur=sqEdit.pid?pById(sqEdit.pid):null;
         html+=`<td><div class="sqedit"><input id="sqName" list="dlAvail" placeholder="Type a player name…" value="${cur?esc(cur.name+" · "+cur.team):""}" autocomplete="off"><datalist id="dlAvail">${avail.slice(0,300).map(x=>`<option value="${esc(x.name)} · ${esc(x.team)}">${fmt(x.price)} list · T${x.tier}</option>`).join("")}</datalist><div class="row2">£<input id="sqPrice" type="number" step="0.5" min="${S.settings.openBid}" value="${cur?cur.paid:S.settings.openBid}"><button id="sqSave" title="Save">✓ Save</button><button id="sqCancel" title="Cancel">✕</button></div><div class="hint">${esc(c.m.name)} has ${fmt(c.m.budget+(cur?cur.paid:0))} usable</div></div></td>`;
       } else if(p){
-        const inactive=S.subHistory.some(x=>x.managerId===c.m.id&&x.outId===p.id);
-        html+=`<td title="${esc(p.name)}"><b>${esc(shortName(p))}</b> <span class="muted small">${esc(p.team)}</span> <span class="pd">${fmt(p.paid)}</span>${inactive?` <span class="pill" style="background:var(--danger-soft);color:var(--danger)">SUBBED OUT</span>`:""}<span class="cellbtns"><button data-sqedit="${c.m.id}|${sl.pos}|${sl.n}|${p.id}" title="Edit player or price">✎</button><button data-sqdel="${p.id}" title="Remove — returns to pool, refunds ${esc(c.m.name)}">✕</button></span></td>`;
+        html+=`<td title="${esc(p.name)}"><b>${esc(shortName(p))}</b> <span class="muted small">${esc(p.team)}</span> <span class="pd">${fmt(p.paid)}</span><span class="cellbtns"><button data-sqedit="${c.m.id}|${sl.pos}|${sl.n}|${p.id}" title="Edit player or price">✎</button><button data-sqdel="${p.id}" title="Remove — returns to pool, refunds ${esc(c.m.name)}">✕</button></span></td>`;
       } else html+=`<td class="cell-empty"><button class="sqadd" data-sqadd="${c.m.id}|${sl.pos}|${sl.n}" title="Manually assign a player to ${esc(c.m.name)}">＋ add</button></td>`;
     }
     html+=`</tr>`;
@@ -1505,30 +1551,7 @@ function renderSquads(){
   html+=sum("To fill","",m=>{const l=slotsLeft(m);return `${l} <span class="pd">(${totalSlots-l}/${totalSlots})</span>`;});
   html+=sum("Max bid","v-max",m=>slotsLeft(m)>0?fmt(maxBid(m)):"—");
   html+=`</tbody></table>`;
-
-  html+=`<div class="subsection"><div class="viewbar"><div><span class="eyebrow">Optional substitutes</span><div class="small muted">Buy up to three extra players after completing the 15-player starting squad.</div></div></div><div class="subgrid">`;
-  for(const c of cols){
-    const m=c.m; S.subs[m.id]=Object.assign({DEF:null,MID:null,FWD:null},S.subs[m.id]||{});
-    html+=`<div class="subcard"><div class="subhead"><b>${esc(m.name)}</b><span class="pill">${substitutionCount(m.id)}/3 subs used</span></div>`;
-    for(const pos of SUB_POS){
-      const pid=S.subs[m.id][pos], p=pid?pById(pid):null, used=p&&subUsed(m.id,pid);
-      const editing=sqEdit&&sqEdit.sub&&sqEdit.mId===m.id&&sqEdit.pos===pos;
-      if(editing){
-        const avail=S.players.filter(x=>x.pos===pos&&(x.status==="available"||x.id===pid)).sort((a,b)=>b.price-a.price);
-        html+=`<div class="subrow"><span class="pos-${pos}"><b>${pos} SUB</b></span><div class="sqedit"><input id="sqName" list="dlSub" placeholder="Type a ${pos}…" value="${p?esc(p.name+" · "+p.team):""}" autocomplete="off"><datalist id="dlSub">${avail.slice(0,300).map(x=>`<option value="${esc(x.name)} · ${esc(x.team)}">${fmt(x.price)} list · T${x.tier}</option>`).join("")}</datalist><div class="row2">£<input id="sqPrice" type="number" step="0.5" min="${S.settings.openBid}" value="${p?p.paid:S.settings.openBid}"><button id="sqSave" title="Save substitute">✓</button><button id="sqCancel" title="Cancel">✕</button></div></div></div>`;
-      } else if(p){
-        html+=`<div class="subrow"><span class="pos-${pos}"><b>${pos} SUB</b></span><span class="subplayer"><b>${esc(shortName(p))}</b> <span class="muted small">${esc(p.team)}</span> <span class="pd">${fmt(p.paid)}</span>${used?` <span class="pill" style="background:var(--turf-soft);color:var(--turf)">USED</span>`:""}</span><span class="cellbtns">${used?"":`<button data-sqedit-sub="${m.id}|${pos}|${p.id}" title="Edit substitute">✎</button><button data-sqdel-sub="${m.id}|${pos}|${p.id}" title="Remove substitute and refund">✕</button>`}</span></div>`;
-      } else html+=`<div class="subrow"><span class="pos-${pos}"><b>${pos} SUB</b></span><span class="muted small">Not purchased</span><span class="cellbtns"><button data-sqadd-sub="${m.id}|${pos}" title="Buy ${pos} substitute" ${slotsLeft(m)>0?"disabled":""}>＋ buy</button></span></div>`;
-    }
-    html+=`</div>`;
-  }
-  html+=`</div><div class="substitution-box"><div><span class="eyebrow">Admin substitution</span><div class="small muted">Position-for-position only. Maximum 3 substitutions per manager. The incoming player must be an unused substitute.</div></div><div class="subcontrols"><select id="subManager">${S.participants.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join("")}</select><select id="subOut"><option value="">Player to sub out…</option>${(()=>{const m=S.participants[0]; return activePlayerIdsAtStart(m.id).map(id=>{const p=pById(id);return p?`<option value="${p.id}">${esc(p.name)} · ${p.pos}</option>`:""}).join("")})()}</select><select id="subIn"><option value="">Substitute to bring in…</option></select><button class="btn" id="btnSubstitute">Make substitution</button></div><div id="subHint" class="small muted"></div></div>`;
   $("#sqBoard").innerHTML=html;
-  if(LIVE_VIEW){
-    $("#sqBoard").querySelectorAll(".cellbtns,.subsection,.substitution-box").forEach(el=>el.style.display="none");
-  }else{
-    updateSubControls();
-  }
 }
 function updateSubControls(){
   const ms=$("#subManager"), out=$("#subOut"), inn=$("#subIn"); if(!ms||!out||!inn) return;
@@ -1543,37 +1566,72 @@ function updateSubControls(){
 /* ============================== MANAGER PROFILES ============================== */
 function profileFor(m){
   S.profiles=S.profiles||{};
-  S.profiles[m.id]=Object.assign({photo:"",teamName:"",history:{"2024/25":"","2025/26":""}},S.profiles[m.id]||{});
-  S.profiles[m.id].history=Object.assign({"2024/25":"","2025/26":""},S.profiles[m.id].history||{});
+  S.profiles[m.id]=Object.assign({photo:"",teamName:"",history:{"2023/24":"","2024/25":"","2025/26":""}},S.profiles[m.id]||{});
+  S.profiles[m.id].history=Object.assign({"2023/24":"","2024/25":"","2025/26":""},S.profiles[m.id].history||{});
   return S.profiles[m.id];
 }
 function managerInitials(name){
   const a=String(name||"?").trim().split(/\s+/).filter(Boolean);
   return (a.length>1?a[0][0]+a[a.length-1][0]:a[0]?.slice(0,2)||"?").toUpperCase();
 }
+function trophyCount(m){ return (m.name==="Aakash"||m.name==="Vinod") ? 1 : 0; }
+function trophySeason(m){ return m.name==="Aakash" ? "2024/25" : m.name==="Vinod" ? "2025/26" : ""; }
+function suitFor(i){ return ["♠","♥","♦","♣","♠","♥","♦","♣"][i%8]; }
+function profileAccent(i){ return ["green","blue","red","gold","purple","cyan","orange","pink"][i%8]; }
 function renderProfiles(){
-  const grid=$("#profilesGrid"); if(!grid) return;
-  grid.innerHTML=S.participants.map(m=>{
-    const pr=profileFor(m), h=pr.history||{};
-    return `<div class="profile-card">
-      <div class="profile-top">
-        <div class="manager-photo-wrap">${pr.photo?`<img class="manager-photo" src="${esc(pr.photo)}" alt="${esc(m.name)}" />`:`<div class="manager-photo-fallback">${esc(managerInitials(m.name))}</div>`}</div>
-        <div style="min-width:0"><div class="profile-name">${esc(m.name)}</div><div class="profile-subtitle">PIRLO Boys FPL Draft Auction 2026 · FPL Draft Manager</div></div>
-      </div>
-      <div class="field" style="margin:0 0 16px"><label>Team name</label><input type="text" data-profile-team="${m.id}" value="${esc(pr.teamName||"")}" placeholder="Enter team name"></div>
-      <div class="profile-history">
-        <div class="profile-history-title">League history</div>
-        <div class="profile-rank">
-          <div class="field"><label>2024/25 final position</label><input type="number" min="1" step="1" data-profile-rank="${m.id}|2024/25" value="${esc(h["2024/25"]??"")}" placeholder="e.g. 1"></div>
-          <div class="field"><label>2025/26 final position</label><input type="number" min="1" step="1" data-profile-rank="${m.id}|2025/26" value="${esc(h["2025/26"]??"")}" placeholder="e.g. 3"></div>
+  const grid=$("#profilesGrid"), list=$("#profileManagerList"); if(!grid||!list) return;
+  const selected=partById(+S.profileSelected)||S.participants[0];
+  if(selected) S.profileSelected=selected.id;
+  list.innerHTML=S.participants.map((m,i)=>{
+    const pr=profileFor(m), wins=trophyCount(m), active=m.id===S.profileSelected;
+    return `<button class="profile-manager-row ${active?"active":""} profile-accent-${profileAccent(i)}" data-profile-select="${m.id}">
+      <span class="pm-avatar">${pr.photo?`<img src="${esc(pr.photo)}" alt="${esc(m.name)}">`:esc(managerInitials(m.name))}</span>
+      <span class="pm-copy"><b>${esc(m.name)}</b><small>${esc(pr.teamName||"Team name not set")}</small></span>
+      <span class="pm-trophy">${wins?`🏆 ${wins}`:`♧ 0`}</span>
+    </button>`;
+  }).join("");
+  if(!selected){ grid.innerHTML=""; return; }
+  const pr=profileFor(selected), h=pr.history||{}, i=Math.max(0,S.participants.findIndex(m=>m.id===selected.id));
+  const owned=S.players.filter(p=>p.ownerId===selected.id).sort((a,b)=>POS.indexOf(a.pos)-POS.indexOf(b.pos)||b.paid-a.paid);
+  const total=Object.values(S.settings.quota).reduce((a,b)=>a+b,0), spent=selected.spent||0, balance=selected.budget||0;
+  const rows=["2025/26","2024/25","2023/24"].map(season=>{
+    const pos=h[season]||"—", champ=(season===trophySeason(selected));
+    const medal=pos==="1"||champ?"🥇":pos==="2"?"🥈":pos==="3"?"🥉":"";
+    return `<tr><td>${season}</td><td>${medal?`<span class="stand-medal">${medal}</span>`:""} <b class="${pos==="1"||champ?"champ-pos":""}">${esc(pos)}</b></td><td>${champ?`<span class="champion-badge">CHAMPION</span>`:""}</td></tr>`;
+  }).join("");
+  const trophy=trophyCount(selected), ts=trophySeason(selected);
+  const trophyCards=["2023/24","2024/25","2025/26"].map(season=>{
+    const won=(selected.name==="Aakash"&&season==="2024/25")||(selected.name==="Vinod"&&season==="2025/26");
+    return `<div class="trophy-card ${won?"won":"empty"}"><div class="trophy-icon">${won?"🏆":"♜"}</div><b>${season}</b><span>${won?"1st · CHAMPION":"—"}</span></div>`;
+  }).join("");
+  const squadRows=owned.length?owned.map(p=>`<tr><td class="pos-${p.pos}"><b>${p.pos}</b></td><td><b>${esc(p.name)}</b></td><td>${esc(p.team)}</td><td class="mono">${fmt(p.paid)}</td></tr>`).join(""):`<tr><td colspan="4" class="muted" style="text-align:center;padding:28px">No players bought yet — this squad will update live as the auction progresses.</td></tr>`;
+  const team=pr.teamName||"Team name not set";
+  grid.innerHTML=`
+    <div class="profile-stage profile-accent-${profileAccent(i)}">
+      <div class="profile-hero-row">
+        <div class="hero-card">
+          <div class="hero-card-bg"><span>${suitFor(i)}</span><span>♠</span><span>${suitFor(i+1)}</span></div>
+          <div class="hero-topline"><span class="rating-chip">♣ ${String(90+((i*3)%8))}</span><span class="hero-suit">${suitFor(i)}</span></div>
+          <div class="hero-photo-wrap">${pr.photo?`<img class="hero-photo" src="${esc(pr.photo)}" alt="${esc(selected.name)}">`:`<div class="hero-photo-fallback">${esc(managerInitials(selected.name))}</div>`}</div>
+          <div class="hero-nameplate"><div class="hero-name">${esc(selected.name)}</div><div class="hero-team">${esc(team)}</div><div class="hero-meta">PIRLO BOYS · FPL DRAFT 2026/27</div></div>
+          <div class="hero-chips"><span>♠</span><span>♥</span><span>♦</span><span>♣</span></div>
+        </div>
+        <div class="profile-quick">
+          <div class="quote-card"><span>“</span><b>ALL IN TO WIN</b><small>Strategy today, glory forever.</small><span>”</span></div>
+          <div class="quick-stat"><span>♠</span><div><small>FPL DRAFT TROPHIES</small><b>${trophy}</b></div></div>
+          <div class="quick-stat"><span>♣</span><div><small>PLAYERS BOUGHT</small><b>${owned.length} / ${total}</b></div></div>
+          <div class="quick-stat"><span>♦</span><div><small>SPENT · BALANCE</small><b>${fmt(spent)} · ${fmt(balance)}</b></div></div>
+          <div class="profile-actions"><label class="btn gold photo-btn">📷 Choose photo<input type="file" accept="image/*" data-profile-photo="${selected.id}" hidden></label>${pr.photo?`<button class="hbtn" data-profile-remove="${selected.id}">Remove photo</button>`:""}</div>
         </div>
       </div>
-      <div class="profile-actions">
-        <label class="btn ghost" style="cursor:pointer">📷 Choose photo<input type="file" accept="image/*" data-profile-photo="${m.id}" hidden></label>
-        ${pr.photo?`<button class="hbtn" data-profile-remove="${m.id}">Remove photo</button>`:""}
+      <div class="profile-info-grid">
+        <section class="profile-panel trophies-panel"><div class="panel-title">♠ FPL DRAFT TROPHY <span>${trophy?`${trophy} TIME${trophy>1?"S":""} CHAMPION`:"NO TITLES YET"}</span></div><div class="trophy-row">${trophyCards}</div></section>
+        <section class="profile-panel standings-panel"><div class="panel-title">♣ SEASON STANDINGS <span>HISTORICAL RECORD</span></div><table><thead><tr><th>SEASON</th><th>FINAL POSITION</th><th>HONOUR</th></tr></thead><tbody>${rows}</tbody></table>
+          <div class="history-edit"><div class="field"><label>2025/26 final position</label><input type="number" min="1" max="8" step="1" data-profile-rank="${selected.id}|2025/26" value="${esc(h["2025/26"]||"")}" placeholder="1–8"></div><div class="field"><label>2024/25 final position</label><input type="number" min="1" max="8" step="1" data-profile-rank="${selected.id}|2024/25" value="${esc(h["2024/25"]||"")}" placeholder="1–8"></div><div class="field"><label>2023/24 final position</label><input type="number" min="1" max="8" step="1" data-profile-rank="${selected.id}|2023/24" value="${esc(h["2023/24"]||"")}" placeholder="1–8"></div></div></section>
       </div>
+      <section class="profile-panel squad-panel"><div class="panel-title">♥ SQUAD SUMMARY <span>${owned.length} / ${total} PLAYERS · ${fmt(spent)} SPENT · ${fmt(balance)} BALANCE</span></div><div class="squad-profile-grid"><div class="position-summary"><div><b>GK</b><span>${owned.filter(p=>p.pos==="GK").length} / ${S.settings.quota.GK}</span></div><div><b>DEF</b><span>${owned.filter(p=>p.pos==="DEF").length} / ${S.settings.quota.DEF}</span></div><div><b>MID</b><span>${owned.filter(p=>p.pos==="MID").length} / ${S.settings.quota.MID}</span></div><div><b>FWD</b><span>${owned.filter(p=>p.pos==="FWD").length} / ${S.settings.quota.FWD}</span></div></div><div class="profile-table-wrap"><table><thead><tr><th>POS</th><th>PLAYER</th><th>CLUB</th><th>SOLD FOR</th></tr></thead><tbody>${squadRows}</tbody></table></div></div></section>
+      <div class="profile-footer">♠ ♥ ♦ ♣ &nbsp; <b>${esc(selected.name)}</b> · ${esc(team)} &nbsp; | &nbsp; Exactly 15 players: 2 GK · 5 DEF · 5 MID · 3 FWD · <b>NO SUBSTITUTES</b> &nbsp; ♣ ♦ ♥ ♠</div>
     </div>`;
-  }).join("");
 }
 
 /* ============================== LEADERBOARD ============================== */
@@ -1632,10 +1690,9 @@ function exportXLSX(){
     SeasonPts:p.pts??"",PPG:p.ppg??"",Photo:p.photo||"",Status:p.status,OwnerID:p.ownerId??"",Owner:p.ownerId?(pmap[p.ownerId]||""):"",Paid:p.paid||0})),"Players");
   sheet(S.participants.map(m=>({ID:m.id,Name:m.name,Budget:m.budget,Spent:m.spent})),"Managers");
   sheet(S.participants.map(m=>{const pr=profileFor(m);return {ManagerID:m.id,Manager:m.name,TeamName:pr.teamName||"",Photo:pr.photo||"",
+    "2023/24 Position":pr.history["2023/24"]||"",
     "2024/25 Position":pr.history["2024/25"]||"",
     "2025/26 Position":pr.history["2025/26"]||""};}),"Profiles");
-  sheet(S.participants.flatMap(m=>SUB_POS.map(pos=>({ManagerID:m.id,Manager:m.name,Position:pos,PlayerID:S.subs?.[m.id]?.[pos]||"",Player:S.subs?.[m.id]?.[pos]?pById(S.subs[m.id][pos])?.name||"":""}))),"Substitutes");
-  sheet(S.subHistory.map(x=>({ManagerID:x.managerId,Manager:partById(x.managerId)?.name||"",OutID:x.outId,Out:pById(x.outId)?.name||"",InID:x.inId,In:pById(x.inId)?.name||"",Time:new Date(x.ts).toISOString()})),"Substitutions");
   sheet(S.log.map(l=>({Type:l.type,PlayerID:l.playerId,Player:l.name,BuyerID:l.buyerId??"",Buyer:l.buyer,
     Amount:l.amount,Time:new Date(l.ts).toISOString()})),"Log");
   sheet(S.queue.map((id,i)=>({Order:i+1,PlayerID:id})),"Queue");
@@ -1669,7 +1726,7 @@ function importXLSX(buf){
     else if(k==="theme") ns.theme=v==="light"?"light":"dark";
   }
   ns.participants=M.map(m=>({id:+m.ID,name:String(m.Name||"Manager"),budget:+m.Budget||0,spent:+m.Spent||0}));
-  ns.profiles={}; const PR=wb.Sheets["Profiles"]?XLSX.utils.sheet_to_json(wb.Sheets["Profiles"]):[]; PR.forEach(r=>{ const id=+r.ManagerID; if(id) ns.profiles[id]={photo:String(r.Photo||""),teamName:String(r.TeamName||""),history:{"2024/25":String(r["2024/25 Position"]||""),"2025/26":String(r["2025/26 Position"]||"")}}; });
+  ns.profiles={}; const PR=wb.Sheets["Profiles"]?XLSX.utils.sheet_to_json(wb.Sheets["Profiles"]):[]; PR.forEach(r=>{ const id=+r.ManagerID; if(id) ns.profiles[id]={photo:String(r.Photo||""),teamName:String(r.TeamName||""),history:{"2023/24":String(r["2023/24 Position"]||""),"2024/25":String(r["2024/25 Position"]||""),"2025/26":String(r["2025/26 Position"]||"")}}; });
   ns.players=P.map(p=>({id:String(p.ID),name:String(p.Name||"?"),web:String(p.WebName||p.Name||""),team:String(p.Club||"—"),
     pos:POS.includes(p.Position)?p.Position:"MID",price:+p.ListPrice||0,
     tier:Math.min(3,Math.max(1,+p.Tier||3)),
@@ -1682,10 +1739,6 @@ function importXLSX(buf){
     m.spent=+ns.players.filter(p=>p.ownerId===m.id).reduce((a,p)=>a+p.paid,0).toFixed(1);
     m.budget=+(ns.settings.budget-m.spent).toFixed(1);
   });
-  ns.subs={}; ns.participants.forEach(m=>ns.subs[m.id]={DEF:null,MID:null,FWD:null});
-  ns.profiles=ns.profiles||{}; ns.participants.forEach(m=>{ns.profiles[m.id]=Object.assign({photo:"",teamName:"",history:{"2024/25":"","2025/26":""}},ns.profiles[m.id]||{});});
-  for(const r of sh("Substitutes")){ const mid=+r.ManagerID, pos=String(r.Position||""); if(ns.subs[mid]&&SUB_POS.includes(pos)&&r.PlayerID!==""&&r.PlayerID!=null) ns.subs[mid][pos]=String(r.PlayerID); }
-  ns.subHistory=sh("Substitutions").map(r=>({managerId:+r.ManagerID,outId:String(r.OutID),inId:String(r.InID),ts:Date.parse(r.Time)||Date.now()})).filter(x=>x.managerId&&x.outId&&x.inId);
   ns.allPlayers=ns.players.map(x=>({...x}));
   ns.rawLoaded=ns.players.length>0;
   ns.log=sh("Log").map(l=>({type:l.Type==="sold"?"sold":"passed",playerId:String(l.PlayerID),name:String(l.Player||""),
@@ -1734,10 +1787,6 @@ document.addEventListener("click", e=>{
   if(t.dataset.unpass) undoPass(t.dataset.unpass);
   if(t.dataset.sqadd){ const [mId,pos,n]=t.dataset.sqadd.split("|"); sqEdit={mId:+mId,pos,n:+n,pid:null,sub:false}; renderSquads(); }
   if(t.dataset.sqedit){ const [mId,pos,n,pid]=t.dataset.sqedit.split("|"); sqEdit={mId:+mId,pos,n:+n,pid,sub:false}; renderSquads(); }
-  if(t.dataset.sqaddSub){ const [mId,pos]=t.dataset.sqaddSub.split("|"); sqEdit={mId:+mId,pos,n:0,pid:null,sub:true}; renderSquads(); }
-  if(t.dataset.sqeditSub){ const [mId,pos,pid]=t.dataset.sqeditSub.split("|"); sqEdit={mId:+mId,pos,n:0,pid,sub:true}; renderSquads(); }
-  if(t.dataset.sqdelSub){ const [mId,pos,pid]=t.dataset.sqdelSub.split("|"); const m=partById(+mId), p=pById(pid); if(p&&m&&!subUsed(m.id,pid)&&confirm(`Remove ${p.name} from ${m.name}'s substitute slot?`)){ m.budget=+(m.budget+p.paid).toFixed(1); m.spent=+(m.spent-p.paid).toFixed(1); p.status="available"; p.ownerId=null; p.paid=0; S.subs[m.id][pos]=null; const le=S.log.find(l=>l.type==="sold"&&l.playerId===pid&&l.buyerId===m.id); if(le) S.log.splice(S.log.indexOf(le),1); S.board=null; save(); renderSquads(); toast(`${p.name} removed and ${m.name} refunded.`); } }
-  if(t.id==="btnSubstitute"){ makeSubstitution(+$(`#subManager`).value, $(`#subOut`).value, $(`#subIn`).value); }
   if(t.id==="sqSave") manualAssign();
   if(t.id==="sqCancel"){ sqEdit=null; renderSquads(); }
   if(t.dataset.sqdel){ if(confirm("Remove this player from the squad? They return to the auction pool and the manager is refunded.")) revertSale(t.dataset.sqdel); }
@@ -1748,6 +1797,7 @@ document.addEventListener("click", e=>{
   if(t.id==="btnUndo") undoLast();
   if(t.id==="btnBoard") fetchScores();
   if(t.dataset.profileRemove){ const pr=profileFor(partById(+t.dataset.profileRemove)); pr.photo=""; save(); renderProfiles(); toast("Manager photo removed ✓"); }
+  if(t.dataset.profileSelect){ S.profileSelected=+t.dataset.profileSelect; save(); renderProfiles(); }
   if(t.dataset.refresh) refreshView(t.dataset.refresh);
   if(t.id==="btnExport") exportXLSX();
   if(t.id==="btnImport") $("#importFile").click();
@@ -1807,7 +1857,7 @@ document.addEventListener("keydown",e=>{
 /* Live viewer is strictly read-only. Block any squad mutation controls even if stale UI is present. */
 document.addEventListener("click", e=>{
   if(!LIVE_VIEW) return;
-  const t=e.target.closest("[data-sqadd],[data-sqadd-sub],[data-sqedit],[data-sqdel],[data-sqedit-sub],[data-sqdel-sub],#sqSave,#sqCancel,#btnSubstitute");
+  const t=e.target.closest("[data-sqadd],[data-sqadd-sub],[data-sqedit],[data-sqdel],[data-sqedit-sub],[data-sqdel-sub],#sqSave,#sqCancel");
   if(t){ e.preventDefault(); e.stopPropagation(); }
 }, true);
 /* ============================== INIT ============================== */
@@ -1822,10 +1872,9 @@ const hashView = (location.hash||"").replace("#","");
 if(LIVE_VIEW){
   document.documentElement.classList.add("live-view");
   document.querySelectorAll("#nav button,#btnExport,#btnImport,#btnReset,#btnTheme").forEach(el=>el.style.display="none");
-  document.querySelectorAll(".view").forEach(el=>el.classList.remove("on"));
-  $("#v-squads").classList.add("on");
-  S.view="squads";
-  renderSquads();
+  const liveStart = location.hash==="#players" || location.hash==="#players-live" ? "players" : "squads";
+  S.view=liveStart;
+  switchView(liveStart);
   loadSharedState();
   setInterval(loadSharedState,5000);
 }else{
