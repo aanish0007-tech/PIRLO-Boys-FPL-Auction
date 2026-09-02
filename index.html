@@ -620,7 +620,9 @@ function scheduleSharedPublish(){
 function publishSharedState(){
   if(LIVE_VIEW) return Promise.resolve();
   const payload=JSON.stringify(publicState());
-  sharedPublishChain=sharedPublishChain.then(async()=>{
+  // Always recover the publish queue after a transient network/CORS failure.
+  // A failed publish must not poison the promise chain permanently.
+  sharedPublishChain=sharedPublishChain.catch(()=>{}).then(async()=>{
     const r=await fetch(SHARED_STATE_URL,{
       method:"POST",
       headers:{"Content-Type":"application/json","X-Auction-Key":SHARED_STATE_KEY},
