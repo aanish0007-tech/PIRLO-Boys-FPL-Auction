@@ -537,7 +537,7 @@ let S = load() || freshState();
 // Keep the complete FPL/API dataset separately from the selected auction pool.
 // This lets the user change Target Pool (e.g. 220 -> 200) without refetching,
 // while ensuring ONLY the selected pool can enter the auction.
-if(S.rawLoaded && !S.started && Array.isArray(S.allPlayers) && S.allPlayers.length){
+if(S.rawLoaded && !S.started && S.queueBuilt && Array.isArray(S.allPlayers) && S.allPlayers.length && (!Array.isArray(S.players) || !S.players.length)){
   S.players = trimPool(S.allPlayers);
   save();
 }
@@ -1419,7 +1419,7 @@ function renderView(v){
 function refreshView(v){
   if(LIVE_VIEW){ loadSharedState(); return; }
   const fresh=load();
-  if(fresh){ S=fresh; if(S.rawLoaded&&!S.started&&Array.isArray(S.allPlayers)&&S.allPlayers.length) S.players=trimPool(S.allPlayers); normalizeIds(); save(); document.documentElement.dataset.theme=S.theme; }
+  if(fresh){ S=fresh; if(S.rawLoaded&&!S.started&&S.queueBuilt&&Array.isArray(S.allPlayers)&&S.allPlayers.length&&(!Array.isArray(S.players)||!S.players.length)) S.players=trimPool(S.allPlayers); normalizeIds(); save(); document.documentElement.dataset.theme=S.theme; }
   if(v==="board"){ renderBoard(); fetchScores(); } else renderView(v);
   toast("Refreshed ✓");
 }
