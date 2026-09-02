@@ -608,9 +608,16 @@ function migrate(s){
   s.profiles = JSON.parse(JSON.stringify(STATIC_PROFILES));
   return s;
 }
-function save(){
+function save(immediate=false){
   localStorage.setItem(LS_KEY, JSON.stringify(S));
-  if(!LIVE_VIEW) scheduleSharedPublish();
+  if(!LIVE_VIEW){
+    if(immediate){
+      clearTimeout(sharedPublishTimer);
+      publishSharedNow();
+    }else{
+      scheduleSharedPublish();
+    }
+  }
 }
 function load(){ try{ return migrate(JSON.parse(localStorage.getItem(LS_KEY))); }catch(e){ return null; } }
 
@@ -1907,18 +1914,30 @@ document.addEventListener("click", e=>{
   }
   if(t.id==="btnAuctionStart") startAuction();
   if(t.id==="btnReset"){
-    if(confirm("Reset the auction for testing? The prepared auction pool and queue will be kept.")){
+    if(confirm("Reset EVERYTHING? This will clear the Auction Pool, Reserve Pool, queue, squads and auction history.")){
       clearInterval(timerH); timerH=null; timeLeft=0; paused=false;
-      S.players.forEach(p=>{p.status="available"; p.ownerId=null; p.paid=0;});
+
+      // A true reset starts the auction from a completely empty pool.
+      // Keep the latest raw FPL source so the user can immediately Build & lock
+      // a fresh pool, but remove every player from the active auction state.
+      S.players=[];
+      S.queue=[];
+      S.qIndex=0;
+      S.queueBuilt=false;
+      S.poolLocked=false;
+      S.manualPoolIds=[];
+      S.poolAudit=null;
+
       S.participants.forEach(m=>{m.budget=S.settings.budget; m.spent=0;});
-      S.log=[]; S.board=null; S.onBlock=null; S.qIndex=0; S.started=false; S.mainAuctionComplete=false; S.poolLocked=false;
-      S.queueBuilt=Array.isArray(S.queue)&&S.queue.length>0;
-      save();
-      // RESET must immediately replace the Cloudflare shared state so Manager View
-      // cannot continue showing the previous auction.
-      publishSharedNow().catch(()=>{});
-      document.documentElement.dataset.theme=S.theme; switchView("setup");
-      toast(S.queueBuilt ? "Auction reset ✓ Same prepared pool is ready to test again." : "Auction reset ✓ Build a queue when ready.");
+      S.log=[]; S.board=null; S.onBlock=null; S.started=false; S.mainAuctionComplete=false;
+      S.subs={}; S.subHistory=[];
+
+      // Save locally and immediately overwrite Cloudflare so every Manager View
+      // sees the empty reset state instead of the previous auction.
+      save(true);
+      document.documentElement.dataset.theme=S.theme;
+      switchView("setup");
+      toast("Everything reset ✓ Auction Pool is empty. Build a fresh queue when ready.");
     }
   }
   if(t.dataset.win) selectWinner(+t.dataset.win);
