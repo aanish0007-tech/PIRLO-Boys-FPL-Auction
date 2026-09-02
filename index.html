@@ -213,6 +213,11 @@ tbody tr:hover{background:var(--card2)}
 .auction-winner-avatar{width:62px;height:62px;border-radius:50%;overflow:hidden;flex:0 0 62px;background:var(--card);border:2px solid var(--turf);display:flex;align-items:center;justify-content:center;font-family:'Chakra Petch';font-weight:800;font-size:20px}
 .auction-winner-avatar img{width:100%;height:100%;object-fit:cover}
 .auction-winner-team{font-size:12px;color:var(--muted);margin-top:2px}
+.squad-team-head{display:flex;align-items:center;justify-content:center;gap:7px;min-width:110px}
+.squad-team-avatar{width:34px;height:34px;border-radius:50%;overflow:hidden;flex:0 0 34px;background:var(--card2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:'Chakra Petch';font-weight:800;font-size:11px}
+.squad-team-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.squad-team-name{font-weight:800;line-height:1.05;white-space:normal}
+
 /* ---------- leaderboard ---------- */
 .lb-hero{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-bottom:16px}
 .rank1 td{background:color-mix(in srgb,var(--gold) 12%,transparent)}
@@ -900,31 +905,28 @@ async function loadFromFPL(auto){
 
     // IMPORTANT: keep every player returned by the FPL API. The target pool is
     // applied only to S.players, which is the actual auction pool.
+    // Refresh only loads the complete FPL source dataset. Selection of the
+    // auction pool happens only when Build & lock auction queue is clicked.
     S.allPlayers = rawPlayers;
-    S.players = trimPool(S.allPlayers);
+    S.players = [];
     S.rawLoaded = true;
     S.loadedAt = Date.now();
     S.queue = [];
     S.qIndex = 0;
     S.queueBuilt = false;
     S.poolLocked = false;
-    S.poolAudit = {
-      target: S.settings.targetPool||200,
-      protected: S.players.filter(p=>p.earlyProtected || p.price >= (S.settings.guaranteeMin||6)).length,
-      earlyProtected: S.players.filter(p=>p.earlyProtected).length,
-      earlyGW,
-      earlyPoints
-    };
+    S.manualPoolIds = [];
+    S.poolAudit = { target:S.settings.targetPool||220, protected:0, earlyProtected:0, earlyGW, earlyPoints };
 
     save();
     renderSetup();
     if(S.view==="players") renderPool();
+    if(S.view==="remaining") renderRemaining();
 
-    const protectedCount = S.players.filter(p=>p.earlyProtected).length;
     st.textContent = "";
     toast(auto
-      ? `Pool re-synced ✓ ${S.players.length} players (${protectedCount} early-season protected)`
-      : `Loaded ${S.players.length} players ✓ — ${protectedCount} early-season protected`
+      ? `FPL source refreshed ✓ ${S.allPlayers.length} players loaded — build the auction pool when ready.`
+      : `FPL source refreshed ✓ ${S.allPlayers.length} players loaded — click Build & lock to select ${S.settings.targetPool||220}.`
     );
   }catch(e){
     if(auto){
@@ -962,11 +964,14 @@ function handleFile(f){
   r.onload = () => {
     try{
       readSetupInputs();
+      // File import follows the same flow as FPL refresh: load the complete
+      // source first; Build & lock creates the selected auction pool later.
       S.allPlayers = f.name.endsWith(".json") ? JSON.parse(r.result) : parseCSV(r.result);
-      S.players = trimPool(S.allPlayers);
+      S.players = [];
       S.queue = []; S.qIndex = 0; S.queueBuilt = false; S.poolLocked = false;
+      S.manualPoolIds = [];
       S.rawLoaded = S.allPlayers.length>0; save(); renderSetup();
-      toast(`Fetched ${S.allPlayers.length} players · auction pool ${S.players.length} ✓`);
+      toast(`Source loaded ✓ ${S.allPlayers.length} players — click Build & lock to select the auction pool.`);
     }catch(e){ toast("Couldn't parse that file — check the column format."); }
   };
   r.readAsText(f);
@@ -1012,16 +1017,19 @@ function renderSetup(){
       <div style="flex:1;font-weight:700">${esc(FIXED_MANAGER_NAMES[i])}</div>
       <span class="muted small">Fixed manager</span></div>`).join("");
   if(S.rawLoaded){
-    const byT = [1,2,3].map(t=>S.players.filter(p=>p.tier===t).length);
-    const byP = POS.map(ps=>ps+" "+S.players.filter(p=>p.pos===ps).length).join(" · ");
+    const sourceCount=Array.isArray(S.allPlayers)?S.allPlayers.length:0;
     const syncT=S.loadedAt?new Date(S.loadedAt).toLocaleString():"";
-    const audit=S.poolAudit||{};
-    const earlyProtected=audit.earlyProtected??S.players.filter(p=>p.earlyProtected).length;
-    const sourceCount = Array.isArray(S.allPlayers) && S.allPlayers.length ? S.allPlayers.length : S.players.length;
-    const manualCount=Array.isArray(S.manualPoolIds)?S.manualPoolIds.length:0;
-    $("#loadedInfo").innerHTML = `<div class="loaded-badge">✓ Auction pool: <b>${S.players.length}</b> players
-      <span class="muted" style="font-weight:500">(FPL source: ${sourceCount}) · T1 ${byT[0]} · T2 ${byT[1]} · T3 ${byT[2]}${manualCount?` · +${manualCount} manually added`:""} &nbsp;|&nbsp; ${byP}${syncT?` &nbsp;|&nbsp; synced ${syncT}`:""} · ${earlyProtected} early-season protected</span></div>`;
-  } else $("#loadedInfo").innerHTML = "";
+    if(!S.queueBuilt){
+      $("#loadedInfo").innerHTML=`<div class="loaded-badge">✓ FPL source loaded: <b>${sourceCount}</b> players <span class="muted" style="font-weight:500"> · Auction Pool not built yet${syncT?` &nbsp;|&nbsp; synced ${syncT}`:""} · Click <b>Build & lock auction queue</b> to select ${S.settings.targetPool||220} players.</span></div>`;
+    }else{
+      const byT=[1,2,3].map(t=>S.players.filter(p=>p.tier===t).length);
+      const byP=POS.map(ps=>ps+" "+S.players.filter(p=>p.pos===ps).length).join(" · ");
+      const audit=S.poolAudit||{};
+      const earlyProtected=audit.earlyProtected??S.players.filter(p=>p.earlyProtected).length;
+      const manualCount=Array.isArray(S.manualPoolIds)?S.manualPoolIds.length:0;
+      $("#loadedInfo").innerHTML=`<div class="loaded-badge">✓ Auction pool built: <b>${S.players.length}</b> players <span class="muted" style="font-weight:500">(FPL source: ${sourceCount}) · T1 ${byT[0]} · T2 ${byT[1]} · T3 ${byT[2]}${manualCount?` · +${manualCount} manually added`:""} &nbsp;|&nbsp; ${byP}${syncT?` &nbsp;|&nbsp; synced ${syncT}`:""} · ${earlyProtected} early-season protected</span></div>`;
+    }
+  } else $("#loadedInfo").innerHTML="";
 }
 
 /* ============================== FAIR QUEUE ============================== */
@@ -1029,6 +1037,19 @@ function renderSetup(){
    random positions in [0,1), so every stretch of the auction contains a
    proportional mix of all tiers. Order is never displayed. */
 function buildQueue(){
+  if(!S.rawLoaded || !Array.isArray(S.allPlayers) || !S.allPlayers.length){
+    toast("Refresh FPL Pool first to load the player source.");
+    return;
+  }
+
+  // This is the ONLY step that selects the actual auction pool from the full
+  // FPL source. Refresh leaves the Auction Pool and Reserve Pool empty.
+  // Preserve any reserve players the auctioneer manually added before a
+  // rebuild; they are intentionally allowed to take the pool above the target.
+  const selected = trimPool(S.allPlayers);
+  const manualIds = new Set(Array.isArray(S.manualPoolIds)?S.manualPoolIds:[]);
+  const manual = S.allPlayers.filter(p=>manualIds.has(p.id) && !selected.some(x=>x.id===p.id));
+  S.players = [...selected, ...manual].map(p=>({...p,status:"available",ownerId:null,paid:0}));
   const avail = S.players.filter(p=>p.status==="available");
 
   const entries = [];
@@ -1059,6 +1080,13 @@ function buildQueue(){
   S.qIndex = 0;
   S.queueBuilt = S.queue.length > 0;
   S.poolLocked = false;
+  S.poolAudit = {
+    target:S.settings.targetPool||220,
+    protected:S.players.filter(p=>p.earlyProtected || p.price >= (S.settings.guaranteeMin||6)).length,
+    earlyProtected:S.players.filter(p=>p.earlyProtected).length,
+    earlyGW:S.settings.earlyGW||2,
+    earlyPoints:S.settings.earlyPoints||6
+  };
 }
 function rand(){ const a=new Uint32Array(1); crypto.getRandomValues(a); return a[0]/2**32; }
 
@@ -1430,7 +1458,7 @@ function renderAuction(){
         return `<button class="bchip auction-manager-chip${sel?" lead":""}" data-win="${m.id}" ${el?"":"disabled"} title="${el?"":"quota full / out of budget"}">
           <span class="auction-manager-avatar">${av}</span><span class="auction-manager-meta"><span class="auction-manager-team">${esc(pr.teamName||"Team name not set")}</span></span><span class="mx">max ${fmt(maxBid(m))}</span></button>`;}).join("") }
       </div>
-      ${w?(()=>{const pr=profileFor(w);const av=pr.photo?`<img src="${esc(pr.photo)}" alt="${esc(w.name)}" />`:esc(managerInitials(w.name));return `<div class="auction-winner-card"><div class="auction-winner-avatar">${av}</div><div><div class="eyebrow">Current winning team</div><b>${esc(pr.teamName||"Team name not set")}</b><div class="auction-winner-team">Manager: ${esc(w.name)}</div></div></div>`})():""}
+      ${w?(()=>{const pr=profileFor(w);const av=pr.photo?`<img src="${esc(pr.photo)}" alt="${esc(w.name)}" />`:esc(managerInitials(w.name));return `<div class="auction-winner-card"><div class="auction-winner-avatar">${av}</div><div><div class="eyebrow">Current winning team</div><b>${esc(pr.teamName||"Team name not set")}</b></div></div>`})():""}
       <div class="secthead">2 · FINAL PRICE</div>
       <div class="pricectl">
         <button class="stp" data-step="-1">−</button>
@@ -1438,9 +1466,9 @@ function renderAuction(){
         <button class="stp" data-step="1">+</button>
         ${[2,5,10,15,20,30].map(v=>`<button class="qk" data-setp="${v}">£${v}</button>`).join("")}
       </div>
-      <div class="maxhint">${w?`${esc(w.name)} can pay up to <b>${fmt(maxBid(w))}</b>`:"select the winner first"}</div>
+      <div class="maxhint">${w?`${esc(profileFor(w).teamName||"Team name not set")} can pay up to <b>${fmt(maxBid(w))}</b>`:"select the winner first"}</div>
       <div class="rostrum-actions">
-        <button class="btn gold" id="btnHammer" ${priceOk?"":"disabled"}>🔨 Sold${w?` to ${esc(w.name)}`:""} for ${fmt(ob.bid||S.settings.openBid)}</button>
+        <button class="btn gold" id="btnHammer" ${priceOk?"":"disabled"}>🔨 Sold${w?` to ${esc(profileFor(w).teamName||"Team name not set")}`:""} for ${fmt(ob.bid||S.settings.openBid)}</button>
         <button class="btn ghost" id="btnSkip" title="No sale — recycles to a random later lot">Pass lot</button>
         <button class="btn ghost" id="btnPause">${paused?"▶ Resume":"❚❚ Pause"}</button>
         <button class="btn ghost" id="btnRestartT" title="Restart the countdown">⏱ ${timerForTier(p.tier)}s</button>
@@ -1463,11 +1491,12 @@ function renderAuction(){
     if(editingId===l.playerId){
       const pl=pById(l.playerId);
       return `<div class="editrow"><b class="small">${esc(l.name)} <span class="muted">(${pl?pl.pos:""})</span></b>
-        <div class="er">→ <select id="editOwner">${S.participants.map(m=>`<option value="${m.id}"${m.id===l.buyerId?" selected":""}>${esc(m.name)}</option>`).join("")}</select>
+        <div class="er">→ <select id="editOwner">${S.participants.map(m=>`<option value="${m.id}"${m.id===l.buyerId?" selected":""}>${esc(profileFor(m).teamName||"Team name not set")}</option>`).join("")}</select>
         £<input type="number" id="editPrice" step="0.5" value="${l.amount}">
         <button data-esave="${l.playerId}" title="Save">✓</button><button data-ecancel="1" title="Cancel">✕</button></div></div>`;
     }
-    return `<div class="li"><span>🔨 <b>${esc(l.name)}</b> → ${esc(l.buyer)} <span class="mono" style="color:var(--turf)">${fmt(l.amount)}</span></span>
+    const buyerObj=partById(l.buyerId); const buyerTeam=buyerObj?(profileFor(buyerObj).teamName||"Team name not set"):l.buyer;
+    return `<div class="li"><span>🔨 <b>${esc(l.name)}</b> → ${esc(buyerTeam)} <span class="mono" style="color:var(--turf)">${fmt(l.amount)}</span></span>
       <span class="logbtns"><button data-edit="${l.playerId}" title="Edit winner or price">✎</button><button data-revert="${l.playerId}" title="Undo this sale — player returns to the pool">↩</button></span></div>`;
   }).join("") || `<div class="muted small">No lots hammered yet. Every sale can be edited (✎) or reverted (↩) here at any time.</div>`;
   // ------ squads mini ------
@@ -1480,7 +1509,8 @@ function renderAuction(){
       const have=counts[ps], cap=S.settings.quota[ps], rem=Math.max(0,cap-have);
       return `<span class="${rem===0?"full":""}"><b>${ps}</b> ${have}/${cap} · ${rem} ${rem===1?"remaining":"remaining"}</span>`;
     }).join("");
-    return `<div class="sqrow${lead?" lead":""}"><div class="top"><span>${esc(m.name)}</span><span class="bal">${fmt(m.budget)}</span></div>
+    const pr=profileFor(m); const av=pr.photo?`<img src="${esc(pr.photo)}" alt="${esc(pr.teamName||m.name)}" />`:esc(managerInitials(m.name));
+    return `<div class="sqrow${lead?" lead":""}"><div class="top"><span class="auction-manager-chip" style="padding:0;background:transparent"><span class="auction-manager-avatar">${av}</span><span class="auction-manager-meta"><span class="auction-manager-team">${esc(pr.teamName||"Team name not set")}</span></span></span><span class="bal">${fmt(m.budget)}</span></div>
       <div class="slotpills mini-slotpills">${slotPills}</div>
       <div class="bot"><span><b>${total-left}/${total}</b> players</span><span>${left} remaining · max ${fmt(maxBid(m))}</span></div>
       <div class="needbar"><i style="width:${(total-left)/total*100}%"></i></div></div>`;}).join("");
@@ -1536,13 +1566,13 @@ function renderRemaining(){
   const clubSel=$("#rClub"), prevClub=clubSel.value;
   const source=Array.isArray(S.allPlayers)?S.allPlayers:[];
   const poolIds=new Set(S.players.map(p=>p.id));
-  const excluded=source.filter(p=>!poolIds.has(p.id));
+  const excluded=S.queueBuilt ? source.filter(p=>!poolIds.has(p.id)) : [];
   const clubs=[...new Set(excluded.map(p=>p.team))].sort();
   clubSel.innerHTML='<option value="">All clubs</option>'+clubs.map(c=>`<option${c===prevClub?" selected":""}>${esc(c)}</option>`).join("");
   const q=$("#rSearch").value.toLowerCase(), pos=$("#rPos").value, club=clubSel.value, tier=$("#rTier").value;
   let rows=excluded.filter(p=>(!q || p.name.toLowerCase().includes(q) || (p.web||"").toLowerCase().includes(q) || p.team.toLowerCase().includes(q)) && (!pos || p.pos===pos) && (!club || p.team===club) && (!tier || p.tier==+tier));
   rows.sort((a,b)=>{const va=a[rSortKey],vb=b[rSortKey];return (va>vb?1:va<vb?-1:0)*rSortDir;});
-  $("#rCount").textContent=rows.length+" players outside the main auction pool";
+  $("#rCount").textContent=S.queueBuilt ? rows.length+" players outside the main auction pool" : "Pool not built yet";
   const th=$("#rthPts"); if(th) th.textContent=(S.statsLabel||"25/26")+" pts";
   const canNominate=S.mainAuctionComplete;
   const manualIds=new Set(Array.isArray(S.manualPoolIds)?S.manualPoolIds:[]);
@@ -1622,7 +1652,7 @@ function renderSquads(){
   });
   const totalSlots=Object.values(q).reduce((a,b)=>a+b,0);
   let html=`<div class="small muted" style="margin-bottom:10px"><b>Squad:</b> exactly 15 players (${q.GK} GK · ${q.DEF} DEF · ${q.MID} MID · ${q.FWD} FWD). <b>No substitutes.</b></div>`;
-  html+=`<table class="xl"><thead><tr><th>Slot</th>${cols.map(c=>`<th>${esc(c.m.name)}</th>`).join("")}</tr></thead><tbody>`;
+  html+=`<table class="xl"><thead><tr><th>Slot</th>${cols.map(c=>{const pr=profileFor(c.m);const av=pr.photo?`<img src="${esc(pr.photo)}" alt="${esc(pr.teamName||c.m.name)}">`:esc(managerInitials(c.m.name));return `<th><div class="squad-team-head"><span class="squad-team-avatar">${av}</span><span class="squad-team-name">${esc(pr.teamName||"Team name not set")}</span></div></th>`;}).join("")}</tr></thead><tbody>`;
   slots.forEach(sl=>{
     html+=`<tr><td class="pos-${sl.pos}">${sl.pos} ${sl.n}</td>`;
     for(const c of cols){
@@ -1631,10 +1661,10 @@ function renderSquads(){
       if(editingHere){
         const avail=S.players.filter(x=>x.pos===sl.pos&&(x.status==="available"||x.id===sqEdit.pid)).sort((a,b)=>b.price-a.price);
         const cur=sqEdit.pid?pById(sqEdit.pid):null;
-        html+=`<td><div class="sqedit"><input id="sqName" list="dlAvail" placeholder="Type a player name…" value="${cur?esc(cur.name+" · "+cur.team):""}" autocomplete="off"><datalist id="dlAvail">${avail.slice(0,300).map(x=>`<option value="${esc(x.name)} · ${esc(x.team)}">${fmt(x.price)} list · T${x.tier}</option>`).join("")}</datalist><div class="row2">£<input id="sqPrice" type="number" step="0.5" min="${S.settings.openBid}" value="${cur?cur.paid:S.settings.openBid}"><button id="sqSave" title="Save">✓ Save</button><button id="sqCancel" title="Cancel">✕</button></div><div class="hint">${esc(c.m.name)} has ${fmt(c.m.budget+(cur?cur.paid:0))} usable</div></div></td>`;
+        html+=`<td><div class="sqedit"><input id="sqName" list="dlAvail" placeholder="Type a player name…" value="${cur?esc(cur.name+" · "+cur.team):""}" autocomplete="off"><datalist id="dlAvail">${avail.slice(0,300).map(x=>`<option value="${esc(x.name)} · ${esc(x.team)}">${fmt(x.price)} list · T${x.tier}</option>`).join("")}</datalist><div class="row2">£<input id="sqPrice" type="number" step="0.5" min="${S.settings.openBid}" value="${cur?cur.paid:S.settings.openBid}"><button id="sqSave" title="Save">✓ Save</button><button id="sqCancel" title="Cancel">✕</button></div><div class="hint">${esc(profileFor(c.m).teamName||"Team name not set")} has ${fmt(c.m.budget+(cur?cur.paid:0))} usable</div></div></td>`;
       } else if(p){
-        html+=`<td title="${esc(p.name)}"><b>${esc(shortName(p))}</b> <span class="muted small">${esc(p.team)}</span> <span class="pd">${fmt(p.paid)}</span><span class="cellbtns"><button data-sqedit="${c.m.id}|${sl.pos}|${sl.n}|${p.id}" title="Edit player or price">✎</button><button data-sqdel="${p.id}" title="Remove — returns to pool, refunds ${esc(c.m.name)}">✕</button></span></td>`;
-      } else html+=`<td class="cell-empty"><button class="sqadd" data-sqadd="${c.m.id}|${sl.pos}|${sl.n}" title="Manually assign a player to ${esc(c.m.name)}">＋ add</button></td>`;
+        html+=`<td title="${esc(p.name)}"><b>${esc(shortName(p))}</b> <span class="muted small">${esc(p.team)}</span> <span class="pd">${fmt(p.paid)}</span><span class="cellbtns"><button data-sqedit="${c.m.id}|${sl.pos}|${sl.n}|${p.id}" title="Edit player or price">✎</button><button data-sqdel="${p.id}" title="Remove — returns to pool, refunds ${esc(profileFor(c.m).teamName||"Team name not set")}">✕</button></span></td>`;
+      } else html+=`<td class="cell-empty"><button class="sqadd" data-sqadd="${c.m.id}|${sl.pos}|${sl.n}" title="Manually assign a player to ${esc(profileFor(c.m).teamName||"Team name not set")}">＋ add</button></td>`;
     }
     html+=`</tr>`;
   });
