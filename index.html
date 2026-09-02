@@ -1700,7 +1700,10 @@ function renderProfiles(){
           <div class="quick-stat"><span>♠</span><div><small>FPL DRAFT TROPHIES</small><b>${trophy}</b></div></div>
           <div class="quick-stat"><span>♣</span><div><small>PLAYERS BOUGHT</small><b>${owned.length} / ${total}</b></div></div>
           <div class="quick-stat"><span>♦</span><div><small>SPENT · BALANCE</small><b>${fmt(spent)} · ${fmt(balance)}</b></div></div>
-          <div class="profile-actions"><label class="btn gold photo-btn">📷 Choose photo<input type="file" accept="image/*" data-profile-photo="${selected.id}" hidden></label>${pr.photo?`<button class="hbtn" data-profile-remove="${selected.id}">Remove photo</button>`:""}</div>
+          <div class="profile-actions" style="align-items:center">
+            <div class="field" style="margin:0;flex:1;min-width:220px"><label>Team name</label><input type="text" data-profile-team="${selected.id}" value="${esc(pr.teamName||"")}" placeholder="Enter team name"></div>
+            <label class="btn gold photo-btn">📷 Choose photo<input type="file" accept="image/*" data-profile-photo="${selected.id}" hidden></label>${pr.photo?`<button class="hbtn" data-profile-remove="${selected.id}">Remove photo</button>`:""}
+          </div>
         </div>
       </div>
       <div class="profile-info-grid">
@@ -1888,7 +1891,27 @@ document.addEventListener("change", e=>{
   if(e.target.id==="subManager"||e.target.id==="subOut"){ updateSubControls(); }
   if(e.target.dataset.profileRank){ const [mid,season]=e.target.dataset.profileRank.split("|"); const pr=profileFor(partById(+mid)); pr.history[season]=e.target.value.trim(); save(); }
   if(e.target.dataset.profileTeam){ const pr=profileFor(partById(+e.target.dataset.profileTeam)); pr.teamName=e.target.value.trim(); save(); }
-  if(e.target.dataset.profilePhoto){ const mid=+e.target.dataset.profilePhoto, m=partById(mid), f=e.target.files&&e.target.files[0]; if(!m||!f) return; if(f.size>2*1024*1024){ toast("Photo is too large — use an image under 2 MB."); e.target.value=""; return; } const r=new FileReader(); r.onload=()=>{ const pr=profileFor(m); pr.photo=String(r.result); save(); renderProfiles(); toast(`${m.name}'s photo saved ✓`); }; r.readAsDataURL(f); }
+  if(e.target.dataset.profilePhoto){
+    const mid=+e.target.dataset.profilePhoto, m=partById(mid), f=e.target.files&&e.target.files[0];
+    if(!m||!f) return;
+    if(f.size>8*1024*1024){ toast("Photo is too large — use an image under 8 MB."); e.target.value=""; return; }
+    const r=new FileReader();
+    r.onload=()=>{
+      const raw=String(r.result);
+      // Store a smaller JPEG so the profile survives localStorage + shared KV reliably.
+      const img=new Image();
+      img.onload=()=>{
+        const max=700, scale=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));
+        const c=document.createElement("canvas"); c.width=Math.max(1,Math.round(img.naturalWidth*scale)); c.height=Math.max(1,Math.round(img.naturalHeight*scale));
+        const ctx=c.getContext("2d"); ctx.drawImage(img,0,0,c.width,c.height);
+        const compressed=c.toDataURL("image/jpeg",.78);
+        const pr=profileFor(m); pr.photo=compressed; save(); renderProfiles(); toast(`${m.name}'s photo saved ✓`);
+      };
+      img.onerror=()=>toast("Could not read that photo. Please choose another image.");
+      img.src=raw;
+    };
+    r.readAsDataURL(f);
+  }
 });
 document.addEventListener("input", e=>{
   if(["fSearch","fPos","fClub","fOwner","fTier","fStatus"].includes(e.target.id)) renderPool();
