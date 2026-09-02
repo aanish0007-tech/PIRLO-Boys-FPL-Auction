@@ -570,6 +570,15 @@ async function publishSharedState(){
 function publishSharedNow(){
   if(!LIVE_VIEW) publishSharedState();
 }
+
+// Keep the shared viewer state alive even if the auctioneer pauses between lots.
+// This also makes the live viewer recover automatically after a refresh/reconnect.
+let sharedPublishInterval = null;
+function startSharedPublishing(){
+  if(LIVE_VIEW || sharedPublishInterval) return;
+  publishSharedNow();
+  sharedPublishInterval = setInterval(publishSharedState, 3000);
+}
 async function loadSharedState(){
   try{
     const r=await fetch(SHARED_STATE_URL,{cache:"no-store"});
@@ -1806,7 +1815,7 @@ normalizeIds();
 document.documentElement.dataset.theme=S.theme;
 // Publish the current auction state immediately so a live viewer can connect
 // even if no new auction action has happened since this page was opened.
-if(!LIVE_VIEW) publishSharedNow();
+if(!LIVE_VIEW) startSharedPublishing();
 /* Anchor routing: open any tab directly, e.g. yoursite.netlify.app/#squads or #auction.
    Handy for projecting different tabs in different browser windows. */
 const hashView = (location.hash||"").replace("#","");
