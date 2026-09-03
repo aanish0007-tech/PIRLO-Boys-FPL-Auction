@@ -580,6 +580,10 @@ function publicState(){
     })),
     settings: { quota: S.settings.quota },
     started: !!S.started,
+    startedAt: S.startedAt || null,
+    queueBuilt: !!S.queueBuilt,
+    poolLocked: !!S.poolLocked,
+    qIndex: Number.isFinite(+S.qIndex) ? +S.qIndex : 0,
     mainAuctionComplete: !!S.mainAuctionComplete,
     log: (S.log||[]).slice(0,200)
   };
@@ -605,13 +609,15 @@ async function publishSharedState(){
     return sharedPublishChain;
   }
 
-  const payload=JSON.stringify(publicState());
-  // Serialize writes so rapid auction actions cannot create overlapping KV puts.
+  // IMPORTANT: build the payload INSIDE the serialized write after any wait.
+  // Otherwise a rapid sequence such as Build → Start → first sale can publish
+  // an older snapshot (for example an empty pool) after the newer state exists.
   sharedPublishChain=sharedPublishChain.catch(()=>{}).then(async()=>{
     const sinceLast=Date.now()-lastSharedPublishAt;
     if(sinceLast<1100){
       await new Promise(resolve=>setTimeout(resolve,1100-sinceLast));
     }
+    const payload=JSON.stringify(publicState());
     const r=await fetch(SHARED_STATE_URL,{
       method:"POST",
       headers:{"Content-Type":"application/json","X-Auction-Key":SHARED_STATE_KEY},
@@ -673,8 +679,8 @@ function playerPhotoUrl(p){
   // FPL API normally returns values such as "p123456.jpg".
   // Some imported files may contain just the numeric player id or a full URL.
   const file=raw.replace(/^https?:\/\//,"").split("/").pop();
-  let base=file.replace(/\.(png|jpg|jpeg)$/i,"");
-  if(!/^p\d+$/i.test(base)) base=base.replace(/^p/i,"");
+  let base=file.replace(/\.(png|jpg|jpeg)$/i,"").replace(/^p/i,"");
+  if(!/^\d+$/.test(base)) return "";
   return `https://resources.premierleague.com/premierleague/photos/players/250x250/p${base}.png`;
 }
 function partById(id){ return S.participants.find(p=>p.id===id); }
@@ -1084,7 +1090,9 @@ function startAuction(){
   }
   nextLot();
   switchView("auction");
-  save();
+  // Publish the running auction state immediately. This guarantees Manager View
+  // receives the full selected pool and current ownership/budget state.
+  save(true);
 }
 function slotsLeft(part){
   const q=S.settings.quota, owned=S.players.filter(p=>p.ownerId===part.id);
@@ -1171,10 +1179,12 @@ function tick(){
 function selectWinner(id){
   const ob=S.onBlock; if(!ob) return;
   const p=pById(ob.pid), m=partById(id);
-  if(!eligible(m,p)){ toast(`${m.name} can't take this player (quota full or out of budget).`); return; }
-  ob.bidderId = (ob.bidderId===id) ? null : id;   // tap again to unselect
-  if(ob.bidderId && !ob.bid) ob.bid = S.settings.openBid;
-  if(ob.bidderId) ob.bid = Math.min(ob.bid, maxBid(m));
+  if(!m){ ob.bidderId=null; save(); renderAuction(); return; }
+  if(!eligible(m,p)){ toast(`${m.name} can't take this player (quota full or out of budget).`); renderAuction(); return; }
+  // A select/dropdown change means “select this manager”; never toggle it off.
+  ob.bidderId=id;
+  if(!ob.bid) ob.bid=S.settings.openBid;
+  ob.bid=Math.min(ob.bid,maxBid(m));
   sndBid(); save(); renderAuction();
 }
 function setPrice(v){
@@ -1186,26 +1196,54 @@ function setPrice(v){
 }
 function hammer(){
   const ob=S.onBlock; if(!ob) return;
-  const p=pById(ob.pid);
-  if(ob.bidderId){
-    const m=partById(ob.bidderId);
-    if(ob.bid<S.settings.openBid || ob.bid>maxBid(m)){ toast(`Price must be between ${fmt(S.settings.openBid)} and ${fmt(maxBid(m))} for ${m.name}.`); return; }
-    p.status="sold"; p.ownerId=m.id; p.paid=ob.bid;
-    m.budget=+(m.budget-ob.bid).toFixed(1); m.spent=+(m.spent+ob.bid).toFixed(1);
-    S.log.unshift({playerId:p.id,name:p.name,buyer:m.name,buyerId:m.id,amount:ob.bid,type:"sold",ts:Date.now()});
-    sndSold(); toast(`SOLD! ${p.name} → ${m.name} for ${fmt(ob.bid)} 🔨`);
-    $("#rostrum").classList.add("soldflash"); setTimeout(()=>$("#rostrum").classList.remove("soldflash"),700);
-  }else{
-    // unsold → recycle to a random later point in the remaining queue
-    S.log.unshift({playerId:p.id,name:p.name,buyer:"—",amount:0,type:"passed",ts:Date.now()});
-    const rest=S.queue.length - S.qIndex - 1;
-    const insertAt = S.qIndex + 1 + Math.floor(rand()*Math.max(1,rest)) ;
-    S.queue.splice(S.qIndex,1);
-    S.queue.splice(Math.min(insertAt,S.queue.length),0,p.id);
-    toast(`${p.name} passed — returns to the pool at a random later lot.`);
-    S.qIndex--; // compensate, nextLot advances
+  const player=pById(ob.pid); if(!player) return;
+
+  // Read the final sale controls directly from the live Auction UI.
+  // This makes the redesigned screen independent of stale onBlock values.
+  const winnerEl=$("#winnerSelect");
+  const priceEl=$("#finalPrice");
+  const selectedId=winnerEl ? +winnerEl.value : +ob.bidderId || 0;
+  const finalPrice=priceEl ? +(+priceEl.value).toFixed(1) : +(ob.bid||0).toFixed(1);
+
+  if(selectedId){
+    const manager=partById(selectedId);
+    if(!manager){ toast("Please select a valid manager."); return; }
+    if(!eligible(manager,player)){ toast(`${manager.name} can't take this player (quota full or out of budget).`); return; }
+    const max=maxBid(manager);
+    if(!(finalPrice>=S.settings.openBid) || finalPrice>max){
+      toast(`Price must be between ${fmt(S.settings.openBid)} and ${fmt(max)} for ${manager.name}.`);
+      return;
+    }
+
+    // Record the sale first, then advance exactly one lot.
+    player.status="sold";
+    player.ownerId=manager.id;
+    player.paid=finalPrice;
+    manager.budget=+(manager.budget-finalPrice).toFixed(1);
+    manager.spent=+(manager.spent+finalPrice).toFixed(1);
+    S.log.unshift({playerId:player.id,name:player.name,buyer:manager.name,buyerId:manager.id,amount:finalPrice,type:"sold",ts:Date.now()});
+    S.onBlock=null;
+    clearInterval(timerH);
+    sndSold();
+    toast(`SOLD! ${player.name} → ${manager.name} for ${fmt(finalPrice)} 🔨`);
+
+    // Persist the completed sale before selecting the next player.
+    save(true);
+    S.qIndex++;
+    nextLot();
+    return;
   }
-  S.qIndex++;
+
+  // No winner selected = UNSOLD / PASS. Recycle the current player later.
+  S.log.unshift({playerId:player.id,name:player.name,buyer:"—",amount:0,type:"passed",ts:Date.now()});
+  const rest=S.queue.length-S.qIndex-1;
+  const insertAt=S.qIndex+1+Math.floor(rand()*Math.max(1,rest));
+  S.queue.splice(S.qIndex,1);
+  S.queue.splice(Math.min(insertAt,S.queue.length),0,player.id);
+  clearInterval(timerH);
+  S.onBlock=null;
+  toast(`${player.name} passed — returns to the pool at a random later lot.`);
+  save(true);
   nextLot();
 }
 let editingId=null, sqEdit=null;
@@ -1858,7 +1896,9 @@ document.addEventListener("click", e=>{
     readSetupInputs();
     if(!S.rawLoaded){ toast("Load players first (step 1)."); return; }
     buildQueue();
-    save(); renderSetup();
+    // Publish the newly built auction pool immediately so Manager View never
+    // starts from an empty/stale shared pool.
+    save(true); renderSetup();
     toast(`Queue locked ✓ ${S.queue.length} players ready. Go to Auction → START AUCTION.`);
   }
   if(t.id==="btnAuctionStart") startAuction();
