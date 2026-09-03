@@ -478,6 +478,7 @@ let sharedPublishTimer = null;
 let sharedPublishPending = false;
 let sharedPublishInFlight = null;
 let lastSharedPublishAt = 0;
+let lastLiveRevision = 0;
 let lastPublishedSharedPayload = "";
 const POS = ["GK","DEF","MID","FWD"];
 const SUB_POS = ["DEF","MID","FWD"];
@@ -515,11 +516,14 @@ function freshState(){
     queueBuilt: false,         // setup has prepared the sealed auction queue
     view: "setup",
     profileSelected: 1,
-    theme: (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
+    theme: (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"),
+    sharedRevision: 0
   };
 }
 function migrate(s){
   if(!s) return s;
+  if(!Number.isFinite(+s.sharedRevision) || +s.sharedRevision<0) s.sharedRevision=0;
+  s.sharedRevision=Math.floor(+s.sharedRevision);
   const d = freshState().settings;
   s.settings = Object.assign({}, d, s.settings||{});
   // PIRLO Boys squads are fixed at 15 players: 2 GK, 5 DEF, 5 MID, 3 FWD.
@@ -583,6 +587,9 @@ function save(immediate=false){
   // localStorage, because a storage event would make the auctioneer tab load
   // the manager tab's snapshot and could alter the live auction.
   if(LIVE_VIEW) return;
+  // Every auctioneer state mutation gets a monotonic revision. This lets the
+  // Worker reject stale writes and lets Manager View reject stale KV reads.
+  S.sharedRevision = Math.max(0, Math.floor(+S.sharedRevision||0)) + 1;
   persistLocal();
   if(!LIVE_VIEW){
     if(immediate){
@@ -598,6 +605,7 @@ function load(){ try{ return migrate(JSON.parse(localStorage.getItem(LS_KEY))); 
 function publicState(){
   return {
     version: 1,
+    revision: Math.max(0, Math.floor(+S.sharedRevision||0)),
     updatedAt: Date.now(),
     participants: S.participants,
     players: S.players.map(p=>({
@@ -697,6 +705,15 @@ async function loadSharedState(){
     if(!r.ok) throw new Error("HTTP "+r.status);
     const data=await r.json();
     if(!data || !Array.isArray(data.players) || !Array.isArray(data.participants)) throw new Error("Invalid shared state");
+    // Cloudflare KV is eventually consistent across locations. A manager page
+    // can briefly receive an older snapshot after a newer sale was already read.
+    // Never roll the live display backwards.
+    const incomingRevision=Math.max(0, Math.floor(+data.revision||0));
+    if(incomingRevision < lastLiveRevision){
+      console.warn("Ignoring stale shared auction snapshot",{incomingRevision,lastLiveRevision});
+      return;
+    }
+    lastLiveRevision=incomingRevision;
     const liveTab = ["players","liveRemaining","profiles"].includes(S.view) ? S.view : "squads";
     const liveProfileSelected = S.profileSelected;
 
