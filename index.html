@@ -100,74 +100,26 @@ tbody tr:hover{background:var(--card2)}
 @media(max-width:800px){.subcontrols{grid-template-columns:1fr}.subrow{grid-template-columns:64px 1fr}.subrow .cellbtns{grid-column:2}}
 
 /* ---------- auction ---------- */
-.auction-grid{display:grid;grid-template-columns:270px 1fr 330px;gap:18px;align-items:start}
-.rostrum{position:relative;overflow:hidden;border-radius:20px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow)}
-.rostrum::before{content:"";position:absolute;inset:0;background:
-  repeating-linear-gradient(0deg,transparent 0 64px,color-mix(in srgb,var(--turf) 7%,transparent) 64px 128px);pointer-events:none}
-.rostrum-inner{position:relative;padding:26px 26px 22px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
-.player-photo-wrap{width:150px;height:150px;margin:4px 0 2px;border-radius:18px;overflow:hidden;background:var(--card2);border:1px solid var(--line);box-shadow:0 10px 24px rgba(0,0,0,.12);display:flex;align-items:flex-end;justify-content:center}
-.player-photo{width:100%;height:100%;object-fit:contain;object-position:center bottom;display:block}
-.player-photo-fallback{font-family:'Chakra Petch';font-size:44px;font-weight:700;color:var(--muted);display:flex;align-items:center;justify-content:center;width:100%;height:100%}
-.rostrum .ticket-edge{position:absolute;top:0;left:0;right:0;height:6px;background:repeating-linear-gradient(90deg,var(--turf) 0 14px,transparent 14px 24px)}
-.onblock-name{font-family:'Chakra Petch';font-weight:700;font-size:clamp(28px,4.4vw,46px);letter-spacing:.5px;line-height:1.1;margin-top:6px}
-.onblock-meta{display:flex;gap:14px;align-items:center;font-family:'Chakra Petch';font-weight:600;font-size:14px;flex-wrap:wrap;justify-content:center}
-.pricebase{font-size:13px;color:var(--muted)}
-.ring{position:relative;width:118px;height:118px;margin:10px 0 2px}
-.ring svg{transform:rotate(-90deg)}
-.ring .t{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Chakra Petch'}
-.ring .sec{font-size:30px;font-weight:700;line-height:1}
-.ring .lbl{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
-.gavel-state{font-family:'Chakra Petch';font-weight:700;font-size:15px;letter-spacing:2px;text-transform:uppercase;min-height:22px}
-.gavel-state.once{color:var(--amber);animation:pulse .8s infinite}
-.gavel-state.twice{color:var(--danger);animation:pulse .45s infinite}
-@keyframes pulse{50%{opacity:.35}}
-.curbid{display:flex;gap:22px;align-items:baseline;margin:2px 0 4px;flex-wrap:wrap;justify-content:center}
-.curbid .amt{font-family:'Chakra Petch';font-weight:700;font-size:40px;color:var(--turf)}
-.curbid .who{font-size:15px;font-weight:600}
-.bidders{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:8px 0 4px}
-.bchip{padding:8px 13px;border-radius:11px;border:1.5px solid var(--line);background:var(--card2);font-weight:600;font-size:13.5px;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:86px;transition:.12s}
-.bchip .mx{font-size:10.5px;color:var(--muted);font-family:'Chakra Petch'}
-.bchip:hover:not(:disabled){border-color:var(--turf);transform:translateY(-1px)}
-.bchip.lead{border-color:var(--turf);background:var(--turf-soft);box-shadow:0 0 0 2px color-mix(in srgb,var(--turf) 35%,transparent)}
-.bchip:disabled{opacity:.32;cursor:not-allowed}
-.bidctl{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:2px}
-.bidctl .inc{padding:9px 14px;border-radius:10px;border:1px solid var(--line);background:var(--card2);font-family:'Chakra Petch';font-weight:700;font-size:14px}
-.bidctl .inc:hover{border-color:var(--turf)}
-.rostrum-actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;justify-content:center}
-.secthead{font-family:'Chakra Petch';font-size:10.5px;letter-spacing:2.5px;font-weight:700;color:var(--muted);margin-top:12px;display:flex;align-items:center;gap:8px}
-.secthead::before,.secthead::after{content:"";height:1px;background:var(--line);width:34px}
-.pricectl{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:8px}
-.pricectl .stp{width:44px;height:44px;border-radius:11px;border:1px solid var(--line);background:var(--card2);font-family:'Chakra Petch';font-weight:700;font-size:19px}
-.pricectl .stp:hover{border-color:var(--turf)}
-.pricectl input{width:110px;text-align:center;font-family:'Chakra Petch';font-weight:700;font-size:21px;padding:8px 6px}
-.pricectl .qk{padding:7px 11px;border-radius:9px;border:1px solid var(--line);background:var(--card2);font-family:'Chakra Petch';font-weight:600;font-size:12.5px}
-.pricectl .qk:hover{border-color:var(--turf)}
-.maxhint{font-size:12px;color:var(--muted);font-family:'Chakra Petch';margin-top:4px}
-.loglist .li{align-items:center}
-.logbtns{display:flex;gap:4px}
-.logbtns button{padding:2px 7px;border-radius:7px;border:1px solid var(--line);background:var(--card);font-size:12px}
-.logbtns button:hover{border-color:var(--turf)}
-.editrow{display:flex;flex-direction:column;gap:7px;padding:9px 10px;border-radius:9px;background:var(--card2);border:1px solid var(--turf)}
-.editrow .er{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-.editrow select,.editrow input{padding:5px 8px;font-size:12.5px}
-.editrow input{width:80px}
-.soldflash{animation:soldpop .7s ease}
-@keyframes soldpop{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--turf) 60%,transparent)}100%{box-shadow:0 0 0 40px transparent}}
-.tierbars{display:flex;flex-direction:column;gap:10px}
-.tbar{display:flex;align-items:center;gap:10px;font-size:12.5px}
-.tbar .track{flex:1;height:8px;border-radius:4px;background:var(--card2);overflow:hidden}
-.tbar .fill{height:100%;border-radius:4px}
-.sidehead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
-.loglist{display:flex;flex-direction:column;gap:8px;max-height:340px;overflow:auto;font-size:13px}
-.loglist .li{display:flex;justify-content:space-between;gap:10px;padding:7px 10px;border-radius:9px;background:var(--card2)}
-.squad-mini{display:flex;flex-direction:column;gap:9px;max-height:520px;overflow:auto}
-.sqrow{padding:10px 12px;border-radius:11px;background:var(--card2);border:1px solid transparent}
-.sqrow.lead{border-color:var(--turf)}
-.sqrow .top{display:flex;justify-content:space-between;font-weight:700;font-size:13.5px}
-.sqrow .bot{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);font-family:'Chakra Petch';margin-top:2px}
-.bal{color:var(--turf);font-family:'Chakra Petch';font-weight:700}
-.needbar{height:5px;border-radius:3px;background:var(--line);margin-top:7px;overflow:hidden}
-.needbar i{display:block;height:100%;background:var(--turf)}
+.auction-dashboard{display:flex;flex-direction:column;gap:14px}
+.auction-topbar{display:grid;grid-template-columns:1.25fr 1fr 1.15fr 1fr 1fr;gap:0;background:#07111a;border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+.auction-stat{min-height:112px;padding:18px 22px;border-right:1px solid var(--line);display:flex;flex-direction:column;justify-content:center}.auction-stat:last-child{border-right:none}.auction-stat .label{font-size:11px;text-transform:uppercase;letter-spacing:1.3px;color:var(--muted);font-weight:700}.auction-stat .big{font:800 30px 'Chakra Petch';color:var(--turf);margin-top:7px;line-height:1}.auction-stat .sub{font-size:12px;margin-top:8px;color:var(--muted)}
+.auction-progress{display:flex;align-items:center;gap:14px}.progress-ring-mini{width:72px;height:72px;position:relative;flex:0 0 72px}.progress-ring-mini svg{transform:rotate(-90deg)}.progress-ring-mini .ringval{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:800 20px 'Chakra Petch';color:var(--turf)}
+.auction-progress-copy{min-width:0}.auction-progress-copy b{color:var(--turf)}.progress-track{height:8px;border-radius:6px;background:#17232e;overflow:hidden;margin-top:7px}.progress-track i{display:block;height:100%;background:var(--turf);border-radius:6px}
+.auction-pace{text-align:center}.pace-values{display:flex;justify-content:center;gap:18px;margin-top:7px}.pace-values strong{display:block;font:800 23px 'Chakra Petch';color:var(--ink)}.pace-values small{font-size:10px;color:var(--muted)}.pace-ok{color:var(--turf);font-size:11px;margin-top:7px;font-weight:700}
+.auction-main-grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(330px,.95fr);gap:14px;align-items:stretch}
+.auction-current{background:#050c13;border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+.auction-current-head,.auction-squads-head{padding:16px 18px;border-bottom:1px solid var(--line);font:800 13px 'Chakra Petch';letter-spacing:1.3px;color:#b78cff;text-transform:uppercase;display:flex;justify-content:space-between;align-items:center}
+.auction-current-body{padding:14px 18px 16px}.current-player-card{display:grid;grid-template-columns:178px 1fr;gap:18px;align-items:center}.current-player-photo{height:205px;border:1px solid var(--line);border-radius:10px;background:#09131d;display:flex;align-items:flex-end;justify-content:center;overflow:hidden}.current-player-photo img{width:100%;height:100%;object-fit:contain;object-position:center bottom}.current-player-photo .fallback{font:700 54px 'Chakra Petch';color:var(--muted);align-self:center}
+.current-player-copy h1{font:800 31px 'Chakra Petch';margin:0 0 5px}.current-player-copy .clubline{font-size:15px;color:var(--ink);margin-bottom:5px}.current-player-copy .clubline span{color:var(--muted);margin:0 5px}.player-detail-line{font-size:13px;color:var(--muted);padding-bottom:13px;border-bottom:1px solid var(--line);margin-bottom:12px}.player-detail-line b{color:var(--ink)}
+.player-facts{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line);margin-bottom:14px}.player-fact{padding:7px 12px 12px;border-right:1px solid var(--line)}.player-fact:last-child{border-right:none}.player-fact small{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:1px}.player-fact b{font:800 20px 'Chakra Petch';display:block;margin-top:5px}
+.highest-bid-card{border:1px solid #6d43a7;border-radius:8px;background:linear-gradient(135deg,rgba(103,63,167,.12),rgba(0,0,0,.05));padding:12px 16px;text-align:center;margin-bottom:13px}.highest-bid-card .label{font:800 11px 'Chakra Petch';letter-spacing:1.2px;color:#a777e8}.highest-bid-card .amount{font:800 38px 'Chakra Petch';color:#b778ff;line-height:1.05;margin:3px 0}.highest-bid-card .by{font-size:12px;color:var(--muted)}.highest-bid-card .by b{color:var(--ink)}
+.auction-action-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}.auction-action-row .btn{min-height:62px;border-radius:7px;font-size:16px}.auction-action-row .btn small{display:block;font-size:11px;font-weight:500;margin-top:3px;opacity:.8}.btn-sold{background:#12a94b!important;color:#fff!important;border-color:#12a94b!important}.btn-pass{background:#e01d25!important;color:#fff!important;border-color:#e01d25!important}
+.sale-controls{display:grid;grid-template-columns:1.2fr .8fr auto;gap:10px;align-items:end;margin-top:12px}.sale-controls label{display:block;font-size:11px;color:#9ecde6;text-transform:uppercase;letter-spacing:.7px;margin:0 0 5px}.sale-controls select,.sale-controls input{width:100%;min-height:42px}.confirm-sale{min-height:42px;padding:0 22px;background:#11a83e!important;color:#fff!important;border-color:#11a83e!important;font-weight:800}.auction-tip{margin-top:12px;border:1px solid #45336d;border-radius:8px;padding:10px 13px;text-align:center;color:#ddd;font-size:12px;background:rgba(57,39,91,.1)}.auction-tip b{color:#ffd05a}.auction-tip .undo-inline{float:right;border:0;background:transparent;color:var(--muted);font-size:11px;cursor:pointer}.auction-footer-note{border-top:1px solid var(--line);margin-top:14px;padding:11px;text-align:center;color:var(--muted);font-size:11px}
+.auction-squads{background:#071019;border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}.auction-squads-head{color:#c8a1ff}.auction-squads-body{padding:12px}.squad-summary-overall{padding:3px 10px 12px}.squad-summary-overall .line{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.squad-summary-overall .line b{font:800 20px 'Chakra Petch';color:var(--turf)}.squad-summary-overall .line span{font-size:12px}.squad-summary-overall .progress-track{margin-top:8px}.squad-summary-overall .remaining{font-size:11px;margin-top:8px;color:var(--muted)}.squad-table-head{display:grid;grid-template-columns:1.5fr .65fr .75fr .75fr;gap:7px;padding:8px 10px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-size:10px;color:var(--muted);text-transform:uppercase}.squad-mini-new{display:flex;flex-direction:column}.squad-row-new{display:grid;grid-template-columns:1.5fr .65fr .75fr .75fr;gap:7px;align-items:center;padding:8px 7px;border-bottom:1px solid var(--line);font-size:12px}.squad-row-new:last-child{border-bottom:none}.manager-cell{display:flex;align-items:center;gap:7px;min-width:0}.manager-cell .avatar{width:30px;height:30px;border-radius:50%;overflow:hidden;flex:0 0 30px;border:1px solid var(--line);background:var(--card2);display:flex;align-items:center;justify-content:center;font:800 10px 'Chakra Petch'}.manager-cell .avatar img{width:100%;height:100%;object-fit:cover}.manager-cell .mn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.manager-cell .mn b{display:block}.manager-cell .mn small{display:block;color:var(--muted);font-size:9px}.sq-num{font-family:'Chakra Petch';text-align:center}.sq-money{font-family:'Chakra Petch';color:var(--turf);font-weight:700;text-align:right}.position-summary-new{display:grid;grid-template-columns:repeat(4,1fr);margin-top:8px;border:1px solid var(--line);border-radius:8px;overflow:hidden}.position-summary-new>div{text-align:center;padding:10px 4px;border-right:1px solid var(--line)}.position-summary-new>div:last-child{border-right:none}.position-summary-new b{display:block;font-size:10px;color:var(--muted)}.position-summary-new span{display:block;font:800 18px 'Chakra Petch';margin-top:4px}
+.auction-not-started{padding:70px 20px;text-align:center}.auction-not-started .big{font:800 22px 'Chakra Petch';color:var(--ink)}
+@media(max-width:1180px){.auction-topbar{grid-template-columns:repeat(3,1fr)}.auction-stat:nth-child(3){border-right:none}.auction-stat:nth-child(n+4){border-top:1px solid var(--line)}}
+@media(max-width:900px){.auction-main-grid{grid-template-columns:1fr}.auction-topbar{grid-template-columns:repeat(2,1fr)}.auction-stat:nth-child(3){border-right:1px solid var(--line)}.current-player-card{grid-template-columns:145px 1fr}.current-player-photo{height:180px}}
+@media(max-width:650px){.auction-topbar{grid-template-columns:1fr}.auction-stat{border-right:none!important;border-bottom:1px solid var(--line)}.auction-stat:last-child{border-bottom:none}.current-player-card{grid-template-columns:1fr}.current-player-photo{height:220px}.player-facts{grid-template-columns:1fr 1fr}.player-fact:nth-child(2){border-right:none}.sale-controls{grid-template-columns:1fr}.auction-action-row{grid-template-columns:1fr}.squad-table-head,.squad-row-new{grid-template-columns:1.35fr .6fr .75fr .75fr}}
 
 /* ---------- pools/squads ---------- */
 .filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
@@ -403,29 +355,23 @@ header{box-shadow:0 6px 30px rgba(0,0,0,.28)}
 
 <!-- ================= AUCTION ================= -->
 <section class="view" id="v-auction">
-  <div class="auction-grid">
-    <div class="grid">
-      <div class="card">
-        <div class="sidehead"><span class="eyebrow">Pool remaining</span><span style="display:flex;gap:8px;align-items:center"><span class="mono small" id="poolCount"></span><button class="hbtn" data-refresh="auction" title="Re-sync this screen">⟳</button></span></div>
-        <div class="tierbars" id="tierBars"></div>
-        <p class="small muted" style="margin-top:12px">Future player names and order are hidden 🔒.</p>
+  <div class="auction-dashboard">
+    <div class="auction-topbar" id="auctionTopStats"></div>
+    <div class="auction-main-grid">
+      <div class="auction-current">
+        <div class="auction-current-head"><span>Current Player</span><span id="auctionLotLabel" class="muted small"></span></div>
+        <div class="auction-current-body" id="rostrumInner"></div>
       </div>
-      <div class="card">
-        <div class="sidehead"><span class="eyebrow">Hammer log</span><button class="hbtn" id="btnUndo">↩ Undo</button></div>
-        <div class="loglist" id="logList"></div>
+      <div class="auction-squads">
+        <div class="auction-squads-head"><span>Squads Summary</span><span id="squadManagerCount" class="muted small"></span></div>
+        <div class="auction-squads-body">
+          <div class="squad-summary-overall" id="squadOverall"></div>
+          <div class="squad-table-head"><span>Manager</span><span>Squad</span><span>Spent</span><span>Remaining</span></div>
+          <div class="squad-mini-new" id="squadMini"></div>
+          <div class="position-summary-new" id="positionSummary"></div>
+          <div class="small muted" style="padding:10px 4px 2px">* 15 players per squad · Budget £200m</div>
+        </div>
       </div>
-    </div>
-
-    <div>
-      <div class="rostrum" id="rostrum">
-        <div class="ticket-edge"></div>
-        <div class="rostrum-inner" id="rostrumInner"></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="sidehead"><span class="eyebrow">Squads · live</span><span class="small muted">balance / slots</span></div>
-      <div class="squad-mini" id="squadMini"></div>
     </div>
   </div>
 </section>
@@ -558,6 +504,7 @@ function freshState(){
     log: [],                // {playerId,name,buyer,amount,ts,type}
     board: null,            // cached leaderboard {ts, gw, rows}
     started: false,
+    startedAt: null,
     mainAuctionComplete: false,
     manualPoolIds: [],          // reserve-pool players manually added to the main auction pool
     queueBuilt: false,         // setup has prepared the sealed auction queue
@@ -576,6 +523,7 @@ function migrate(s){
   if(!(+(s.settings.timerT2)>0)) s.settings.timerT2=Math.max(5,(s.settings.timer||20)-5);
   if(!(+(s.settings.timerT3)>0)) s.settings.timerT3=Math.max(5,(s.settings.timer||20)-10);
   if(s.mainAuctionComplete==null) s.mainAuctionComplete=false;
+  if(s.startedAt==null) s.startedAt=null;
   if(!Array.isArray(s.manualPoolIds)) s.manualPoolIds=[];
   if(typeof s.queueBuilt!=="boolean") s.queueBuilt=Array.isArray(s.queue)&&s.queue.length>0;
   if(!Array.isArray(s.allPlayers) || !s.allPlayers.length) s.allPlayers=Array.isArray(s.players)?s.players.map(x=>({...x})):[];
@@ -1127,6 +1075,7 @@ function startAuction(){
   if(!S.started){
     S.participants.forEach(p=>{p.budget=S.settings.budget; p.spent=0;});
     S.started = true;
+    S.startedAt = Date.now();
     S.poolLocked = true;
     S.qIndex = 0;
   }
@@ -1214,6 +1163,7 @@ function tick(){
   if(timeLeft===2) sndTwice();
   if(timeLeft<=0){ timeLeft=0; clearInterval(timerH); sndSold(); renderTimer(); return; }
   renderTimer();
+  renderAuctionTopStats();
 }
 function selectWinner(id){
   const ob=S.onBlock; if(!ob) return;
@@ -1450,95 +1400,74 @@ function renderTimer(){
     gs.textContent = paused?"paused":timeLeft<=0?"TIME — RECORD THE RESULT":timeLeft<=2?"GOING TWICE…":timeLeft<=5?"GOING ONCE…":"bidding in the room"; }
 }
 
+function auctionElapsedMs(){
+  return S.startedAt ? Math.max(0,Date.now()-S.startedAt) : 0;
+}
+function formatElapsed(ms){
+  const sec=Math.floor(ms/1000), h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60), s=sec%60;
+  return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+}
+function renderAuctionTopStats(){
+  const el=$("#auctionTopStats"); if(!el) return;
+  const sold=S.log.filter(l=>l.type==="sold").length;
+  const total=S.players.length||S.settings.targetPool||220;
+  const remaining=Math.max(0,total-sold);
+  const pct=total?Math.min(100,sold/total*100):0;
+  const elapsed=auctionElapsedMs();
+  const hours=elapsed/3600000;
+  const pace=hours>0 ? sold/hours : 0;
+  const targetHours=3;
+  const required=targetHours>0 ? total/targetHours : 0;
+  const onTrack=pace>=required*0.95;
+  const r=29,c=2*Math.PI*r,off=c*(1-pct/100);
+  el.innerHTML=`
+    <div class="auction-stat"><div class="label">Auction Timer</div><div class="big">⏱ ${formatElapsed(elapsed)}</div><div class="sub">${S.startedAt?`Started ${new Date(S.startedAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`:"Not started"}</div></div>
+    <div class="auction-stat"><div class="label">Players Sold</div><div class="big">${sold} <span style="color:var(--ink);font-size:21px">/ ${total}</span></div><div class="sub"><b style="color:var(--turf)">${remaining}</b> Players Remaining</div></div>
+    <div class="auction-stat"><div class="label">Auction Progress</div><div class="auction-progress"><div class="progress-ring-mini"><svg width="72" height="72"><circle cx="36" cy="36" r="${r}" fill="none" stroke="#1b2a35" stroke-width="7"/><circle cx="36" cy="36" r="${r}" fill="none" stroke="var(--turf)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${off}"/></svg><div class="ringval">${Math.round(pct)}%</div></div><div class="auction-progress-copy"><div><b>${sold}</b> of ${total} Players Sold</div><div class="progress-track"><i style="width:${pct}%"></i></div><div class="sub"><b>${remaining}</b> Players Remaining</div></div></div></div>
+    <div class="auction-stat auction-pace"><div class="label">Pace</div><div class="pace-values"><div><strong>${pace?Math.round(pace):0}</strong><small>players / hour</small></div><div><strong>${Math.round(required)}</strong><small>required</small></div></div><div class="pace-ok" style="color:${onTrack?'var(--turf)':'var(--danger)'}">${onTrack?'✓ On Track':'⚠ Behind Pace'}</div></div>
+    <div class="auction-stat"><div class="label">Target Duration</div><div class="big">◷ 3h 00m</div><div class="sub">Planned Duration</div></div>`;
+}
 function renderAuction(){
-  // ------ rostrum ------
-  const R=$("#rostrumInner");
-  if(!S.started){ R.innerHTML=`<div class="empty"><div class="big">Auction not started</div><div class="small muted" style="margin:8px 0 18px">Build & lock the 220-player queue in Setup first.</div><button class="btn gold" id="btnAuctionStart">🔨 START AUCTION</button></div>`; }
-  else if(!S.onBlock){
-    R.innerHTML=`<div class="empty" style="padding:70px 20px"><div class="big">🏁 That's the lot — auction complete!</div>Every squad is filled (or no eligible bidders remain). Check the Squads tab for the final rosters, then take it to the pitch.</div>`;
-  } else {
-    const p=pById(S.onBlock.pid), ob=S.onBlock;
-    const circ=2*Math.PI*52;
-    const w = ob.bidderId ? partById(ob.bidderId) : null;
-    const priceOk = w && ob.bid>=S.settings.openBid && ob.bid<=maxBid(w);
-    R.innerHTML = `
-      <div class="eyebrow">Lot ${S.log.filter(l=>l.type==="sold").length+1} · on the block</div>
-      <div class="player-photo-wrap">${p.photo?`<img class="player-photo" src="https://resources.premierleague.com/premierleague25/photos/players/110x140/p${encodeURIComponent(String(p.photo).replace(/\.jpg$/i,"").replace(/\.png$/i,""))}.png" alt="${esc(p.name)}" loading="eager" onerror="this.onerror=null;this.src='https://resources.premierleague.com/premierleague/photos/players/250x250/p${encodeURIComponent(String(p.photo).replace(/\.jpg$/i,"").replace(/\.png$/i,""))}.png';" />`:`<div class="player-photo-fallback">${esc((p.name||"?").slice(0,1).toUpperCase())}</div>`}</div>
-      <div class="onblock-name">${esc(p.name)}</div>
-      <div class="onblock-meta"><span>${esc(p.team)}</span><span class="pos-${p.pos}">${p.pos}</span>
-        <span class="pill tier-${p.tier}">TIER ${p.tier}</span><span class="pricebase">FPL list ${fmt(p.price)} · opens at ${fmt(S.settings.openBid)}</span></div>
-      <div class="small muted" style="font-family:'Chakra Petch'">${S.statsLabel||"25/26"}: <b style="color:var(--ink)">${p.pts??"—"} pts</b> · ${p.ppg!=null?(+p.ppg).toFixed(1):"—"} per game</div>
-      <div class="ring"><svg width="118" height="118"><circle cx="59" cy="59" r="52" fill="none" stroke="var(--line)" stroke-width="7"/>
-        <circle id="ringFg" cx="59" cy="59" r="52" fill="none" stroke="var(--turf)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="0"/></svg>
-        <div class="t"><div class="sec" id="ringSec">${timeLeft}</div><div class="lbl">seconds</div></div></div>
-      <div class="gavel-state" id="gavelState"></div>
-      <div class="small muted" style="max-width:430px">Auction this player out loud in the room. When the bidding ends, record the result below — no need to track individual raises.</div>
-      <div class="secthead">1 · WHO WON THE BID</div>
-      <div class="bidders">${S.participants.map(m=>{
-        const el = eligible(m,p), sel = ob.bidderId===m.id;
-        const pr=profileFor(m); const av=pr.photo?`<img src="${esc(pr.photo)}" alt="${esc(m.name)}" />`:esc(managerInitials(m.name));
-        return `<button class="bchip auction-manager-chip${sel?" lead":""}" data-win="${m.id}" ${el?"":"disabled"} title="${el?"":"quota full / out of budget"}">
-          <span class="auction-manager-avatar">${av}</span><span class="auction-manager-meta"><span class="auction-manager-team">${esc(pr.teamName||"Team name not set")}</span></span><span class="mx">max ${fmt(maxBid(m))}</span></button>`;}).join("") }
-      </div>
-      ${w?(()=>{const pr=profileFor(w);const av=pr.photo?`<img src="${esc(pr.photo)}" alt="${esc(w.name)}" />`:esc(managerInitials(w.name));return `<div class="auction-winner-card"><div class="auction-winner-avatar">${av}</div><div><div class="eyebrow">Current winning team</div><b>${esc(pr.teamName||"Team name not set")}</b></div></div>`})():""}
-      <div class="secthead">2 · FINAL PRICE</div>
-      <div class="pricectl">
-        <button class="stp" data-step="-1">−</button>
-        <input type="number" id="finalPrice" step="${S.settings.minBid}" min="${S.settings.openBid}" value="${ob.bid||S.settings.openBid}">
-        <button class="stp" data-step="1">+</button>
-        ${[2,5,10,15,20,30].map(v=>`<button class="qk" data-setp="${v}">£${v}</button>`).join("")}
-      </div>
-      <div class="maxhint">${w?`${esc(profileFor(w).teamName||"Team name not set")} can pay up to <b>${fmt(maxBid(w))}</b>`:"select the winner first"}</div>
-      <div class="rostrum-actions">
-        <button class="btn gold" id="btnHammer" ${priceOk?"":"disabled"}>🔨 Sold${w?` to ${esc(profileFor(w).teamName||"Team name not set")}`:""} for ${fmt(ob.bid||S.settings.openBid)}</button>
-        <button class="btn ghost" id="btnSkip" title="No sale — recycles to a random later lot">Pass lot</button>
-        <button class="btn ghost" id="btnPause">${paused?"▶ Resume":"❚❚ Pause"}</button>
-        <button class="btn ghost" id="btnRestartT" title="Restart the countdown">⏱ ${timerForTier(p.tier)}s</button>
-      </div>`;
+  renderAuctionTopStats();
+  const R=$("#rostrumInner"), lot=$("#auctionLotLabel");
+  if(!S.started){
+    if(lot) lot.textContent="";
+    R.innerHTML=`<div class="auction-not-started"><div class="big">Auction not started</div><div class="small muted" style="margin:8px 0 18px">Build & lock the ${S.settings.targetPool||220}-player queue in Setup first.</div><button class="btn gold" id="btnAuctionStart">🔨 START AUCTION</button></div>`;
+  }else if(!S.onBlock){
+    if(lot) lot.textContent="COMPLETE";
+    R.innerHTML=`<div class="auction-not-started"><div class="big">🏁 Auction complete!</div><div class="small muted">Every squad is filled or no eligible bidders remain. Check the Squads tab for final rosters.</div></div>`;
+  }else{
+    const p=pById(S.onBlock.pid), ob=S.onBlock, w=ob.bidderId?partById(ob.bidderId):null;
+    const priceOk=w && ob.bid>=S.settings.openBid && ob.bid<=maxBid(w);
+    const sold=S.log.filter(l=>l.type==="sold").length;
+    if(lot) lot.textContent=`LOT ${sold+1} · ON THE BLOCK`;
+    const pid=encodeURIComponent(String(p.photo||"").replace(/\\.jpg$/i,"").replace(/\\.png$/i,""));
+    const photo=p.photo?`<img src="https://resources.premierleague.com/premierleague25/photos/players/110x140/p${pid}.png" alt="${esc(p.name)}" loading="eager" onerror="this.onerror=null;this.src='https://resources.premierleague.com/premierleague/photos/players/250x250/p${pid}.png';" />`:`<div class="fallback">${esc((p.name||"?").slice(0,1).toUpperCase())}</div>`;
+    R.innerHTML=`
+      <div class="current-player-card"><div class="current-player-photo">${photo}</div><div class="current-player-copy">
+        <h1>${esc(p.name)}</h1><div class="clubline">${esc(p.team)} <span>•</span> ${esc(p.pos)}</div>
+        <div class="player-detail-line">${p.age!=null?`Age: <b>${esc(String(p.age))}</b> <span style="margin:0 10px">•</span>`:""}${p.nation?`<b>${esc(p.nation)}</b>`:""}</div>
+        <div class="player-facts"><div class="player-fact"><small>List Price</small><b>${fmt(p.price)}</b></div><div class="player-fact"><small>Base Price</small><b>${fmt(S.settings.openBid)}</b></div><div class="player-fact"><small>Season Points</small><b>${p.pts??"—"}</b></div><div class="player-fact"><small>PPG</small><b>${p.ppg!=null?(+p.ppg).toFixed(1):"—"}</b></div></div>
+      </div></div>
+      <div class="highest-bid-card"><div class="label">HIGHEST BID</div><div class="amount">${fmt(ob.bid||0)}</div><div class="by">${w?`by <b>${esc(profileFor(w).teamName||w.name)}</b>`:"No bid recorded yet"}</div></div>
+      <div class="auction-action-row"><button class="btn btn-sold" id="btnHammer" ${priceOk?"":"disabled"}>🔨 SOLD<small>Record Sale</small></button><button class="btn btn-pass" id="btnSkip">⏭ UNSOLD / PASS<small>Next Player</small></button></div>
+      <div class="sale-controls"><div><label>Sold to (select manager)</label><select id="winnerSelect"><option value="">Select Manager</option>${S.participants.map(m=>{const el=eligible(m,p);return `<option value="${m.id}" ${m.id===ob.bidderId?"selected":""} ${el?"":"disabled"}>${esc(profileFor(m).teamName||m.name)}</option>`}).join("")}</select></div><div><label>Final Price</label><input type="number" id="finalPrice" step="${S.settings.minBid}" min="${S.settings.openBid}" value="${ob.bid||S.settings.openBid}"></div><button class="btn confirm-sale" id="btnConfirmSale" ${priceOk?"":"disabled"}>CONFIRM SALE</button></div>
+      <div class="auction-tip">💡 <b>TIP:</b> Run the auction in the room and record only the final sale here. The app will handle the rest! <button class="undo-inline" id="btnUndo">↩ Undo</button></div>
+      <div class="auction-footer-note">🛡 Future player names and order are hidden 🔒</div>`;
     renderTimer();
   }
-  // ------ tier bars ------
-  const avail=S.players.filter(p=>p.status==="available");
-  $("#poolCount").textContent = avail.length + " left";
-  const cols={1:"var(--t1)",2:"var(--t2)",3:"var(--t3)"};
-  $("#tierBars").innerHTML=[1,2,3].map(t=>{
-    const tot=S.players.filter(p=>p.tier===t).length, left=avail.filter(p=>p.tier===t).length;
-    return `<div class="tbar"><span class="pill tier-${t}">T${t}</span>
-      <div class="track"><div class="fill" style="width:${tot?left/tot*100:0}%;background:${cols[t]}"></div></div>
-      <span class="mono">${left}/${tot}</span></div>`;}).join("");
-  // ------ log ------
-  $("#logList").innerHTML = S.log.slice(0,60).map(l=>{
-    if(l.type!=="sold") return `<div class="li muted"><span>↻ ${esc(l.name)} passed</span>
-      <span class="logbtns"><button data-unpass="${l.playerId}" title="Undo the pass — bring this player back up next">↩</button></span></div>`;
-    if(editingId===l.playerId){
-      const pl=pById(l.playerId);
-      return `<div class="editrow"><b class="small">${esc(l.name)} <span class="muted">(${pl?pl.pos:""})</span></b>
-        <div class="er">→ <select id="editOwner">${S.participants.map(m=>`<option value="${m.id}"${m.id===l.buyerId?" selected":""}>${esc(profileFor(m).teamName||"Team name not set")}</option>`).join("")}</select>
-        £<input type="number" id="editPrice" step="0.5" value="${l.amount}">
-        <button data-esave="${l.playerId}" title="Save">✓</button><button data-ecancel="1" title="Cancel">✕</button></div></div>`;
-    }
-    const buyerObj=partById(l.buyerId); const buyerTeam=buyerObj?(profileFor(buyerObj).teamName||"Team name not set"):l.buyer;
-    return `<div class="li"><span>🔨 <b>${esc(l.name)}</b> → ${esc(buyerTeam)} <span class="mono" style="color:var(--turf)">${fmt(l.amount)}</span></span>
-      <span class="logbtns"><button data-edit="${l.playerId}" title="Edit winner or price">✎</button><button data-revert="${l.playerId}" title="Undo this sale — player returns to the pool">↩</button></span></div>`;
-  }).join("") || `<div class="muted small">No lots hammered yet. Every sale can be edited (✎) or reverted (↩) here at any time.</div>`;
-  // ------ squads mini ------
-  $("#squadMini").innerHTML = S.participants.map(m=>{
-    const total=Object.values(S.settings.quota).reduce((a,b)=>a+b,0), left=slotsLeft(m);
-    const lead = S.onBlock && S.onBlock.bidderId===m.id;
-    const counts={};
-    for(const ps of POS) counts[ps]=S.players.filter(p=>p.ownerId===m.id&&p.pos===ps).length;
-    const slotPills=POS.map(ps=>{
-      const have=counts[ps], cap=S.settings.quota[ps];
-      return `<span class="${have>=cap?"full":""}"><b>${ps}</b> ${have}/${cap}</span>`;
-    }).join("");
-    const pr=profileFor(m); const av=pr.photo?`<img src="${esc(pr.photo)}" alt="${esc(pr.teamName||m.name)}" />`:esc(managerInitials(m.name));
-    return `<div class="sqrow${lead?" lead":""}"><div class="top"><span class="auction-manager-chip" style="padding:0;background:transparent"><span class="auction-manager-avatar">${av}</span><span class="auction-manager-meta"><span class="auction-manager-team">${esc(pr.teamName||"Team name not set")}</span></span></span><span class="bal">${fmt(m.budget)}</span></div>
-      <div class="slotpills mini-slotpills">${slotPills}</div>
-      <div class="bot"><span><b>${total-left}/${total}</b> players</span><span>${left} remaining · max ${fmt(maxBid(m))}</span></div>
-      <div class="needbar"><i style="width:${(total-left)/total*100}%"></i></div></div>`;}).join("");
+  renderAuctionSquads();
+}
+function renderAuctionSquads(){
+  const total=Object.values(S.settings.quota).reduce((a,b)=>a+b,0), sold=S.log.filter(l=>l.type==="sold").length, maxTotal=S.participants.length*total;
+  const pct=maxTotal?Math.min(100,sold/maxTotal*100):0;
+  $("#squadManagerCount").textContent=`${S.participants.length} Managers`;
+  $("#squadOverall").innerHTML=`<div class="line"><span>OVERALL STATUS</span><span><b>${sold}</b> / ${maxTotal} Players Sold &nbsp; <b>${Math.round(pct)}%</b> Completed</span></div><div class="progress-track"><i style="width:${pct}%"></i></div><div class="remaining">${Math.max(0,maxTotal-sold)} Players Remaining</div>`;
+  $("#squadMini").innerHTML=S.participants.map(m=>{const owned=S.players.filter(p=>p.ownerId===m.id),pr=profileFor(m),av=pr.photo?`<img src="${esc(pr.photo)}" alt=""/>`:esc(managerInitials(m.name));return `<div class="squad-row-new"><div class="manager-cell"><span class="avatar">${av}</span><span class="mn"><b>${esc(pr.teamName||m.name)}</b><small>${esc(m.name)}</small></span></div><span class="sq-num">${owned.length} / ${total}</span><span class="sq-money">${fmt(m.spent)}</span><span class="sq-money">${fmt(m.budget)}</span></div>`;}).join("");
+  const counts={}; POS.forEach(pos=>counts[pos]=S.players.filter(p=>p.status==="sold"&&p.pos===pos).length);
+  $("#positionSummary").innerHTML=POS.map(pos=>`<div><b>${pos}</b><span>${counts[pos]} / ${S.participants.length*S.settings.quota[pos]}</span></div>`).join("");
 }
 
-let sortKey="price", sortDir=-1;
 function renderPool(){
   if(LIVE_VIEW){
     const note=$("#livePoolNote");
@@ -1946,7 +1875,7 @@ document.addEventListener("click", e=>{
       S.poolAudit=null;
 
       S.participants.forEach(m=>{m.budget=S.settings.budget; m.spent=0;});
-      S.log=[]; S.board=null; S.onBlock=null; S.started=false; S.mainAuctionComplete=false;
+      S.log=[]; S.board=null; S.onBlock=null; S.started=false; S.startedAt=null; S.mainAuctionComplete=false;
       S.subs={}; S.subHistory=[];
 
       // Save locally and immediately overwrite Cloudflare so every Manager View
@@ -1973,7 +1902,7 @@ document.addEventListener("click", e=>{
   if(t.id==="sqCancel"){ sqEdit=null; renderSquads(); }
   if(t.dataset.sqdel){ if(confirm("Remove this player from the squad? They return to the auction pool and the manager is refunded.")) revertSale(t.dataset.sqdel); }
   if(t.id==="btnRestartT"){ clearInterval(timerH); const p=S.onBlock?pById(S.onBlock.pid):null; timeLeft=timerForTier(p?.tier); paused=false; timerH=setInterval(tick,1000); renderTimer(); renderAuction(); }
-  if(t.id==="btnHammer"){ clearInterval(timerH); hammer(); }
+  if(t.id==="btnHammer" || t.id==="btnConfirmSale"){ clearInterval(timerH); hammer(); }
   if(t.id==="btnSkip"){ if(S.onBlock){ S.onBlock.bidderId=null; clearInterval(timerH); hammer(); } }
   if(t.id==="btnPause"){ paused=!paused; renderTimer(); renderAuction(); }
   if(t.id==="btnUndo") undoLast();
@@ -1998,6 +1927,7 @@ document.addEventListener("input", e=>{
 });
 document.addEventListener("change", e=>{
   if(e.target.id==="finalPrice" && S.onBlock) setPrice(e.target.value);
+  if(e.target.id==="winnerSelect" && S.onBlock){ selectWinner(+e.target.value || 0); }
 });
 document.querySelectorAll("#poolTable th").forEach(th=>th.addEventListener("click",()=>{
   const k=th.dataset.s; if(sortKey===k) sortDir*=-1; else {sortKey=k; sortDir=k==="name"||k==="team"?1:-1;} renderPool();
