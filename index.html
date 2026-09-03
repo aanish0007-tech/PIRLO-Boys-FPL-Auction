@@ -515,8 +515,7 @@ function freshState(){
     mainPoolIds: [],             // finalized main-auction pool ids for first-cycle tracking
     mainPoolSeenIds: [],         // main-pool players that have appeared on the rostrum at least once
     mainPoolFirstCycleComplete: false,
-    reserveQueue: [],            // reserve players explicitly brought in for priority nomination
-    reserveAuctionIds: [],       // reserve players already brought into the post-main auction phase
+    nextReservePlayerId: null,  // one reserve player waiting to be the next lot
     manualPoolIds: [],          // reserve-pool players manually added to the main auction pool
     queueBuilt: false,         // setup has prepared the sealed auction queue
     view: "setup",
@@ -556,8 +555,13 @@ function migrate(s){
   if(!Array.isArray(s.mainPoolIds)) s.mainPoolIds=[];
   if(!Array.isArray(s.mainPoolSeenIds)) s.mainPoolSeenIds=[];
   if(typeof s.mainPoolFirstCycleComplete!=="boolean") s.mainPoolFirstCycleComplete=false;
-  if(!Array.isArray(s.reserveQueue)) s.reserveQueue=[];
-  if(!Array.isArray(s.reserveAuctionIds)) s.reserveAuctionIds=[];
+  // Legacy reserve queues are no longer used. Preserve at most one pending nomination.
+  if(s.nextReservePlayerId==null){
+    if(Array.isArray(s.reserveQueue) && s.reserveQueue.length) s.nextReservePlayerId=s.reserveQueue[0];
+    else s.nextReservePlayerId=null;
+  }
+  delete s.reserveQueue;
+  delete s.reserveAuctionIds;
   if(typeof s.queueBuilt!=="boolean") s.queueBuilt=Array.isArray(s.queue)&&s.queue.length>0;
   if(!Array.isArray(s.allPlayers) || !s.allPlayers.length) s.allPlayers=Array.isArray(s.players)?s.players.map(x=>({...x})):[];
   // Backfill first-cycle tracking for states created before this feature.
@@ -749,11 +753,14 @@ async function loadSharedState(){
     const privateOnBlock = S.onBlock || null;
     const privateAllPlayers = Array.isArray(S.allPlayers) ? S.allPlayers : [];
     const privateRawLoaded = !!S.rawLoaded;
+    const privateNextReservePlayerId = S.nextReservePlayerId ?? null;
     S=migrate(data);
     S.queue = privateQueue;
     S.onBlock = privateOnBlock;
     S.allPlayers = privateAllPlayers;
     S.rawLoaded = privateRawLoaded;
+    // nextReservePlayerId is auctioneer-private and must never be overwritten by Manager View.
+    S.nextReservePlayerId = privateNextReservePlayerId;
     S.view=liveTab;
     S.profileSelected = liveProfileSelected || 1;
     // Manager View is read-only. Never change auctioneer-only flags here.
@@ -1170,8 +1177,7 @@ function buildQueue(){
   S.mainPoolIds = [...S.queue];
   S.mainPoolSeenIds = [];
   S.mainPoolFirstCycleComplete = false;
-  S.reserveQueue = [];
-  S.reserveAuctionIds = [];
+  S.nextReservePlayerId = null;
   S.poolLocked = false;
   S.poolAudit = {
     target:S.settings.targetPool||220,
@@ -1261,17 +1267,29 @@ function timerForTier(tier){
 function nextLot(){
   clearInterval(timerH); S.onBlock=null;
 
-  // Reserve nominations are a separate priority lane. They never enter the
-  // sealed main queue and therefore never get buried behind passed players.
-  if(Array.isArray(S.reserveQueue) && S.reserveQueue.length){
-    const rid=S.reserveQueue.shift();
-    const rp=pById(rid);
+  // A reserve nomination is a single, isolated priority lane. It never enters
+  // S.queue and therefore cannot change the sealed main-auction order/qIndex.
+  if(S.nextReservePlayerId!=null){
+    const rid=S.nextReservePlayerId;
+    const rp=allById(rid);
+    S.nextReservePlayerId=null;
     if(rp && rp.status!=="sold" && S.participants.some(m=>eligible(m,rp))){
-      S.onBlock={pid:rp.id,bid:0,bidderId:null,reserve:true};
+      // Reserve players are outside the sealed main queue, but once nominated
+      // they must exist in S.players so the normal auction/hammer engine can
+      // resolve them through pById(). They are never added to mainPoolIds/S.queue.
+      let auctionPlayer=S.players.find(p=>p.id===rp.id);
+      if(!auctionPlayer){
+        auctionPlayer={...rp,status:"available",ownerId:null,paid:0};
+        S.players.push(auctionPlayer);
+      }else if(auctionPlayer.status==="passed"){
+        auctionPlayer.status="available";
+      }
+      S.onBlock={pid:auctionPlayer.id,bid:0,bidderId:null,reserve:true};
       timeLeft=timerForTier(rp.tier); paused=false;
       timerH=setInterval(tick,1000);
       save(); renderAuction(); return;
     }
+    if(rp) toast(`${rp.name} cannot be brought into the auction (no eligible manager).`);
   }
 
   // The sealed queue is private auctioneer state. A public Manager View snapshot
@@ -1376,9 +1394,6 @@ function hammer(){
     manager.budget=+(manager.budget-finalPrice).toFixed(1);
     manager.spent=+(manager.spent+finalPrice).toFixed(1);
     S.log.unshift({playerId:player.id,name:player.name,buyer:manager.name,buyerId:manager.id,amount:finalPrice,type:"sold",ts:Date.now()});
-    if(ob.reserve){
-      S.reserveAuctionIds=(S.reserveAuctionIds||[]).filter(id=>id!==player.id);
-    }
     S.onBlock=null;
     clearInterval(timerH);
     sndSold();
@@ -1400,12 +1415,13 @@ function hammer(){
   S.log.unshift({playerId:player.id,name:player.name,buyer:"—",amount:0,type:"passed",ts:Date.now()});
 
   if(ob.reserve){
-    // A reserve nomination is its own priority lane. If passed, it goes to the
-    // back of that lane rather than entering the 220-player/passed queue.
-    S.reserveQueue.push(player.id);
+    // A reserve nomination is a one-shot manual priority lot. If passed, remove
+    // it from S.players so it returns to the reserve source for manual retry.
+    S.nextReservePlayerId=null;
+    S.players=S.players.filter(p=>p.id!==player.id);
     clearInterval(timerH);
     S.onBlock=null;
-    toast(`${player.name} passed — reserve nominations stay in priority order.`);
+    toast(`${player.name} passed — it remains in the Reserve Pool.`);
     save(true);
     nextLot();
     return;
@@ -1762,7 +1778,9 @@ function renderRemaining(){
   const clubSel=$("#rClub"), prevClub=clubSel.value;
   const source=Array.isArray(S.allPlayers)?S.allPlayers:[];
   const poolIds=new Set(S.players.map(p=>p.id));
-  const reserveTaken=new Set([...(S.reserveAuctionIds||[]),...((S.reserveQueue||[]))]);
+  const reserveTaken=new Set();
+  if(S.nextReservePlayerId!=null) reserveTaken.add(S.nextReservePlayerId);
+  if(S.onBlock && S.onBlock.reserve) reserveTaken.add(S.onBlock.pid);
   const excluded=S.queueBuilt ? source.filter(p=>!poolIds.has(p.id) && !reserveTaken.has(p.id)) : [];
   const clubs=[...new Set(excluded.map(p=>p.team))].sort();
   clubSel.innerHTML='<option value="">All clubs</option>'+clubs.map(c=>`<option${c===prevClub?" selected":""}>${esc(c)}</option>`).join("");
@@ -1824,18 +1842,15 @@ function nominatePlayer(pid){
   if(!S.mainPoolFirstCycleComplete){toast("All main-auction players must appear once before reserve nominations open.");return;}
   const source=allById(pid); if(!source){toast("Player not found.");return;}
   if(S.players.some(p=>p.id===pid)){toast(`${source.name} is already in the auction pool.`);return;}
-  if((S.reserveQueue||[]).includes(pid) || (S.reserveAuctionIds||[]).includes(pid)){toast(`${source.name} is already queued for the auction.`);return;}
+  if(S.nextReservePlayerId!=null){toast("Only one reserve player can be brought into the auction at a time. Finish the pending reserve nomination first.");return;}
+  if(S.onBlock && S.onBlock.reserve && S.onBlock.pid===pid){toast(`${source.name} is already on the auction block.`);return;}
 
-  // Keep reserve players outside S.players so they remain a reserve-source
-  // player rather than becoming part of the sealed main pool. Put them in a
-  // dedicated priority queue; if a lot is currently running, this player is
-  // simply the next lot after that current bidding round finishes.
-  if(!Array.isArray(S.reserveQueue)) S.reserveQueue=[];
-  if(!Array.isArray(S.reserveAuctionIds)) S.reserveAuctionIds=[];
-  S.reserveQueue.push(pid);
-  S.reserveAuctionIds.push(pid);
+  // Keep reserve players outside S.players and outside the sealed S.queue.
+  // Exactly one reserve player can wait here; if a lot is running it becomes
+  // the next lot after that lot is SOLD/PASSED. If no lot is running it starts now.
+  S.nextReservePlayerId=pid;
   save(true);
-  toast(`${source.name} brought into the auction ✓`);
+  toast(`${source.name} will be the next lot ✓`);
   renderRemaining();
   if(!S.onBlock) nextLot();
 }
@@ -2131,7 +2146,7 @@ document.addEventListener("click", e=>{
       S.poolAudit=null;
 
       S.participants.forEach(m=>{m.budget=S.settings.budget; m.spent=0;});
-      S.log=[]; S.board=null; S.onBlock=null; S.started=false; S.startedAt=null; S.mainAuctionComplete=false; S.mainPoolIds=[]; S.mainPoolSeenIds=[]; S.mainPoolFirstCycleComplete=false; S.reserveQueue=[]; S.reserveAuctionIds=[];
+      S.log=[]; S.board=null; S.onBlock=null; S.started=false; S.startedAt=null; S.mainAuctionComplete=false; S.mainPoolIds=[]; S.mainPoolSeenIds=[]; S.mainPoolFirstCycleComplete=false; S.nextReservePlayerId=null;
       S.subs={}; S.subHistory=[];
 
       // Save locally and immediately overwrite Cloudflare so every Manager View
