@@ -485,7 +485,7 @@ let S = load() || freshState();
 // while ensuring ONLY the selected pool can enter the auction.
 if(S.rawLoaded && !S.started && S.queueBuilt && Array.isArray(S.allPlayers) && S.allPlayers.length && (!Array.isArray(S.players) || !S.players.length)){
   S.players = trimPool(S.allPlayers);
-  save();
+  persistLocal();
 }
 
 function freshState(){
@@ -556,8 +556,11 @@ function migrate(s){
   s.profiles = JSON.parse(JSON.stringify(STATIC_PROFILES));
   return s;
 }
-function save(immediate=false){
+function persistLocal(){
   localStorage.setItem(LS_KEY, JSON.stringify(S));
+}
+function save(immediate=false){
+  persistLocal();
   if(!LIVE_VIEW){
     if(immediate){
       clearTimeout(sharedPublishTimer);
@@ -1404,7 +1407,9 @@ function switchView(v){
   if(LIVE_VIEW && !["squads","players","liveRemaining","profiles"].includes(v)) v="squads";
   if(!document.getElementById("v-"+v)) v="setup";
   S.view=v;
-  if(!LIVE_VIEW) save();
+  // Switching tabs is a UI-only action. NEVER publish shared auction state
+  // from here: a Manager View opened with local/default state must not be able
+  // to overwrite the live auction in Cloudflare KV.
   if(location.hash!=="#"+v && !LIVE_VIEW) history.replaceState(null,"","#"+v);
   document.querySelectorAll(".view").forEach(el=>el.classList.remove("on"));
   $("#v-"+v).classList.add("on");
@@ -1425,7 +1430,7 @@ function renderView(v){
 function refreshView(v){
   if(LIVE_VIEW){ loadSharedState(); return; }
   const fresh=load();
-  if(fresh){ S=fresh; if(S.rawLoaded&&!S.started&&S.queueBuilt&&Array.isArray(S.allPlayers)&&S.allPlayers.length&&(!Array.isArray(S.players)||!S.players.length)) S.players=trimPool(S.allPlayers); normalizeIds(); save(); document.documentElement.dataset.theme=S.theme; }
+  if(fresh){ S=fresh; if(S.rawLoaded&&!S.started&&S.queueBuilt&&Array.isArray(S.allPlayers)&&S.allPlayers.length&&(!Array.isArray(S.players)||!S.players.length)) S.players=trimPool(S.allPlayers); normalizeIds(); persistLocal(); document.documentElement.dataset.theme=S.theme; }
   if(v==="board"){ renderBoard(); fetchScores(); } else renderView(v);
   toast("Refreshed ✓");
 }
