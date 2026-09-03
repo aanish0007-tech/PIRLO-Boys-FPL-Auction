@@ -203,7 +203,7 @@ tbody tr:hover{background:var(--card2)}
 
 /* ---------- manager identity in auction ---------- */
 .auction-manager-chip{display:flex;align-items:center;gap:9px;text-align:left;padding:8px 10px}
-.auction-manager-avatar{width:34px;height:34px;border-radius:50%;overflow:hidden;flex:0 0 34px;background:var(--card2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:'Chakra Petch';font-weight:800;font-size:12px}
+.auction-manager-avatar{width:46px;height:46px;border-radius:50%;overflow:hidden;flex:0 0 46px;background:var(--card2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:'Chakra Petch';font-weight:800;font-size:12px}
 .auction-manager-avatar img{width:100%;height:100%;object-fit:cover;display:block}
 .auction-manager-meta{min-width:0;display:flex;flex-direction:column;line-height:1.1}
 .auction-manager-name{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -283,7 +283,7 @@ header{box-shadow:0 6px 30px rgba(0,0,0,.28)}
 .squad-mini{display:grid!important;grid-template-columns:1fr 1fr;gap:7px!important;max-height:none!important;overflow:visible!important}
 .squad-mini .sqrow{min-height:58px;padding:8px 9px!important;border-radius:10px!important;border:1px solid var(--line);background:linear-gradient(145deg,var(--card2),rgba(0,0,0,.08));}
 .squad-mini .sqrow .top{font-size:12px!important}.squad-mini .sqrow .bot{font-size:10px!important;gap:4px}.squad-mini .needbar{height:4px!important;margin-top:5px!important}
-.squad-mini .mini-slotpills{gap:4px!important;margin-top:5px!important}.squad-mini .mini-slotpills span{font-size:9px!important;padding:2px 5px!important;white-space:nowrap}.squad-mini .mini-slotpills span b{font-weight:800}
+.squad-mini .mini-slotpills{gap:4px!important;margin-top:5px!important}.squad-mini .mini-slotpills span{font-size:9px!important;padding:2px 6px!important;white-space:nowrap}.squad-mini .mini-slotpills span b{font-weight:800}
 .auction-grid{grid-template-columns:250px minmax(0,1fr) 360px}
 @media(max-width:1120px){.auction-grid{grid-template-columns:1fr}.squad-mini{grid-template-columns:repeat(4,1fr)!important}}
 @media(max-width:700px){.squad-mini{grid-template-columns:1fr 1fr!important}}
@@ -408,7 +408,7 @@ header{box-shadow:0 6px 30px rgba(0,0,0,.28)}
       <div class="card">
         <div class="sidehead"><span class="eyebrow">Pool remaining</span><span style="display:flex;gap:8px;align-items:center"><span class="mono small" id="poolCount"></span><button class="hbtn" data-refresh="auction" title="Re-sync this screen">⟳</button></span></div>
         <div class="tierbars" id="tierBars"></div>
-        <p class="small muted" style="margin-top:12px">Upcoming order is sealed 🔒 — tiers are evenly spread to the final lot.</p>
+        <p class="small muted" style="margin-top:12px">Future player names and order are hidden 🔒.</p>
       </div>
       <div class="card">
         <div class="sidehead"><span class="eyebrow">Hammer log</span><button class="hbtn" id="btnUndo">↩ Undo</button></div>
@@ -639,14 +639,31 @@ function publicState(){
 function scheduleSharedPublish(){
   if(LIVE_VIEW) return;
   clearTimeout(sharedPublishTimer);
-  sharedPublishTimer=setTimeout(publishSharedState,350);
+  // Publish only after an actual state change. Keep a small debounce so several
+  // rapid changes collapse into one KV write.
+  const wait=Math.max(350,1100-(Date.now()-lastSharedPublishAt));
+  sharedPublishTimer=setTimeout(publishSharedState,wait);
 }
-function publishSharedState(){
+async function publishSharedState(){
   if(LIVE_VIEW) return Promise.resolve();
+  clearTimeout(sharedPublishTimer);
+
+  // Cloudflare KV allows only 1 write/sec to the same key. If we are still
+  // inside that window, wait and use the latest state when the timer fires.
+  const elapsed=Date.now()-lastSharedPublishAt;
+  if(elapsed<1100){
+    clearTimeout(sharedPublishTimer);
+    sharedPublishTimer=setTimeout(publishSharedState,1100-elapsed);
+    return sharedPublishChain;
+  }
+
   const payload=JSON.stringify(publicState());
-  // Always recover the publish queue after a transient network/CORS failure.
-  // A failed publish must not poison the promise chain permanently.
+  // Serialize writes so rapid auction actions cannot create overlapping KV puts.
   sharedPublishChain=sharedPublishChain.catch(()=>{}).then(async()=>{
+    const sinceLast=Date.now()-lastSharedPublishAt;
+    if(sinceLast<1100){
+      await new Promise(resolve=>setTimeout(resolve,1100-sinceLast));
+    }
     const r=await fetch(SHARED_STATE_URL,{
       method:"POST",
       headers:{"Content-Type":"application/json","X-Auction-Key":SHARED_STATE_KEY},
@@ -655,23 +672,21 @@ function publishSharedState(){
       cache:"no-store"
     });
     if(!r.ok) throw new Error("HTTP "+r.status);
-  }).catch(e=>{ console.warn("Shared auction publish failed:",e); throw e; });
+    lastSharedPublishAt=Date.now();
+  }).catch(e=>{ console.warn("Shared auction publish failed:",e); });
   return sharedPublishChain;
 }
 let sharedPublishChain = Promise.resolve();
+let lastSharedPublishAt = 0;
 function publishSharedNow(){
   if(LIVE_VIEW) return Promise.resolve();
+  clearTimeout(sharedPublishTimer);
   return publishSharedState();
 }
 
-// Keep the shared viewer state alive even if the auctioneer pauses between lots.
-// This also makes the live viewer recover automatically after a refresh/reconnect.
-let sharedPublishInterval = null;
-function startSharedPublishing(){
-  if(LIVE_VIEW || sharedPublishInterval) return;
-  publishSharedNow();
-  sharedPublishInterval = setInterval(publishSharedState, 3000);
-}
+// Shared Manager View is read-only and polls the KV state every 5 seconds.
+// The auctioneer publishes only when save() is triggered by a real state change;
+// there is deliberately NO background 3-second KV write loop.
 async function loadSharedState(){
   try{
     const r=await fetch(SHARED_STATE_URL,{cache:"no-store"});
@@ -1513,8 +1528,8 @@ function renderAuction(){
     const counts={};
     for(const ps of POS) counts[ps]=S.players.filter(p=>p.ownerId===m.id&&p.pos===ps).length;
     const slotPills=POS.map(ps=>{
-      const have=counts[ps], cap=S.settings.quota[ps], rem=Math.max(0,cap-have);
-      return `<span class="${rem===0?"full":""}"><b>${ps}</b> ${have}/${cap} · ${rem} ${rem===1?"remaining":"remaining"}</span>`;
+      const have=counts[ps], cap=S.settings.quota[ps];
+      return `<span class="${have>=cap?"full":""}"><b>${ps}</b> ${have}/${cap}</span>`;
     }).join("");
     const pr=profileFor(m); const av=pr.photo?`<img src="${esc(pr.photo)}" alt="${esc(pr.teamName||m.name)}" />`:esc(managerInitials(m.name));
     return `<div class="sqrow${lead?" lead":""}"><div class="top"><span class="auction-manager-chip" style="padding:0;background:transparent"><span class="auction-manager-avatar">${av}</span><span class="auction-manager-meta"><span class="auction-manager-team">${esc(pr.teamName||"Team name not set")}</span></span></span><span class="bal">${fmt(m.budget)}</span></div>
@@ -1815,28 +1830,30 @@ function exportXLSX(){
   if(typeof XLSX==="undefined"){ toast("Excel library didn't load — check your connection and refresh."); return; }
   const wb=XLSX.utils.book_new();
   const pmap=Object.fromEntries(S.participants.map(m=>[m.id,m.name]));
-  const sheet=(rows,name)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),name);
-  sheet(S.players.map(p=>({ID:p.id,Name:p.name,WebName:p.web||"",Club:p.team,Position:p.pos,ListPrice:p.price,Tier:p.tier,
-    SeasonPts:p.pts??"",PPG:p.ppg??"",Photo:p.photo||"",Status:p.status,OwnerID:p.ownerId??"",Owner:p.ownerId?(pmap[p.ownerId]||""):"",Paid:p.paid||0})),"Players");
-  sheet(S.participants.map(m=>({ID:m.id,Name:m.name,Budget:m.budget,Spent:m.spent})),"Managers");
-  sheet(S.participants.map(m=>{const pr=profileFor(m);return {ManagerID:m.id,Manager:m.name,TeamName:pr.teamName||"",Photo:pr.photo||"",
-    "2023/24 Position":pr.history["2023/24"]||"",
-    "2024/25 Position":pr.history["2024/25"]||"",
-    "2025/26 Position":pr.history["2025/26"]||""};}),"Profiles");
-  sheet(S.log.map(l=>({Type:l.type,PlayerID:l.playerId,Player:l.name,BuyerID:l.buyerId??"",Buyer:l.buyer,
-    Amount:l.amount,Time:new Date(l.ts).toISOString()})),"Log");
-  sheet(S.queue.map((id,i)=>({Order:i+1,PlayerID:id})),"Queue");
-  const st=S.settings;
-  sheet([
-    {Key:"budget",Value:st.budget},{Key:"timer",Value:st.timer},{Key:"timerT1",Value:st.timerT1},{Key:"timerT2",Value:st.timerT2},{Key:"timerT3",Value:st.timerT3},{Key:"openBid",Value:st.openBid},
-    {Key:"minBid",Value:st.minBid},{Key:"minPrice",Value:st.minPrice},{Key:"sound",Value:st.sound?1:0},
-    {Key:"quota",Value:JSON.stringify(st.quota)},{Key:"tiers",Value:JSON.stringify(st.tiers)},
-    {Key:"targetPool",Value:st.targetPool},{Key:"guaranteeMin",Value:st.guaranteeMin},
-    {Key:"qIndex",Value:S.qIndex},{Key:"started",Value:S.started?1:0},{Key:"theme",Value:S.theme}
-  ],"Settings");
-  XLSX.writeFile(wb,`conran-smith-lane-${new Date().toISOString().slice(0,10)}.xlsx`);
-  toast("Exported full auction state to Excel ✓");
+
+  // Export player information only. Photos/profile data are intentionally excluded
+  // to keep the Excel file clean and avoid Excel's 32,767-character cell limit.
+  const rows=S.players.map(p=>({
+    ID:p.id,
+    Name:p.name,
+    WebName:p.web||"",
+    Club:p.team,
+    Position:p.pos,
+    ListPrice:p.price,
+    Tier:p.tier,
+    SeasonPts:p.pts??"",
+    PPG:p.ppg??"",
+    Status:p.status,
+    OwnerID:p.ownerId??"",
+    Owner:p.ownerId?(pmap[p.ownerId]||""):"",
+    Paid:p.paid||0
+  }));
+
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),"Players");
+  XLSX.writeFile(wb,`pirlo-fpl-players-${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast("Player information exported to Excel ✓");
 }
+
 function importXLSX(buf){
   if(typeof XLSX==="undefined"){ toast("Excel library didn't load — check your connection and refresh."); return; }
   const wb=XLSX.read(buf,{type:"array"});
@@ -2030,7 +2047,7 @@ normalizeIds();
 document.documentElement.dataset.theme=S.theme;
 // Publish the current auction state immediately so a live viewer can connect
 // even if no new auction action has happened since this page was opened.
-if(!LIVE_VIEW) startSharedPublishing();
+// No background KV publishing. save() publishes only when auction state changes.
 /* Anchor routing: open any tab directly, e.g. yoursite.netlify.app/#squads or #auction.
    Handy for projecting different tabs in different browser windows. */
 const hashView = (location.hash||"").replace("#","");
