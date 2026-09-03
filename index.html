@@ -669,9 +669,12 @@ function allById(id){ return S.allPlayers.find(p=>p.id===id); }
 const shortName = p => (p&&(p.web || (p.name||"").trim().split(" ").pop())) || "?";
 function playerPhotoUrl(p){
   if(!p||!p.photo) return "";
-  const raw=String(p.photo);
+  const raw=String(p.photo).trim();
+  // FPL API normally returns values such as "p123456.jpg".
+  // Some imported files may contain just the numeric player id or a full URL.
   const file=raw.replace(/^https?:\/\//,"").split("/").pop();
-  const base=file.replace(/\.(png|jpg|jpeg)$/i,"");
+  let base=file.replace(/\.(png|jpg|jpeg)$/i,"");
+  if(!/^p\d+$/i.test(base)) base=base.replace(/^p/i,"");
   return `https://resources.premierleague.com/premierleague/photos/players/250x250/p${base}.png`;
 }
 function partById(id){ return S.participants.find(p=>p.id===id); }
@@ -1441,8 +1444,8 @@ function renderAuction(){
     const priceOk=w && ob.bid>=S.settings.openBid && ob.bid<=maxBid(w);
     const sold=S.log.filter(l=>l.type==="sold").length;
     if(lot) lot.textContent=`LOT ${sold+1} · ON THE BLOCK`;
-    const pid=encodeURIComponent(String(p.photo||"").replace(/\\.jpg$/i,"").replace(/\\.png$/i,""));
-    const photo=p.photo?`<img src="https://resources.premierleague.com/premierleague25/photos/players/110x140/p${pid}.png" alt="${esc(p.name)}" loading="eager" onerror="this.onerror=null;this.src='https://resources.premierleague.com/premierleague/photos/players/250x250/p${pid}.png';" />`:`<div class="fallback">${esc((p.name||"?").slice(0,1).toUpperCase())}</div>`;
+    const photoUrl=playerPhotoUrl(p);
+    const photo=photoUrl?`<img src="${photoUrl}" alt="${esc(p.name)}" loading="eager" onerror="this.onerror=null;this.parentElement.innerHTML='<div class=&quot;fallback&quot;>${esc((p.name||"?").slice(0,1).toUpperCase())}</div>';" />`:`<div class="fallback">${esc((p.name||"?").slice(0,1).toUpperCase())}</div>`;
     R.innerHTML=`
       <div class="current-player-card"><div class="current-player-photo">${photo}</div><div class="current-player-copy">
         <h1>${esc(p.name)}</h1><div class="clubline">${esc(p.team)} <span>•</span> ${esc(p.pos)}</div>
