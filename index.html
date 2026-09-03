@@ -512,6 +512,11 @@ function freshState(){
     started: false,
     startedAt: null,
     mainAuctionComplete: false,
+    mainPoolIds: [],             // finalized main-auction pool ids for first-cycle tracking
+    mainPoolSeenIds: [],         // main-pool players that have appeared on the rostrum at least once
+    mainPoolFirstCycleComplete: false,
+    reserveQueue: [],            // reserve players explicitly brought in for priority nomination
+    reserveAuctionIds: [],       // reserve players already brought into the post-main auction phase
     manualPoolIds: [],          // reserve-pool players manually added to the main auction pool
     queueBuilt: false,         // setup has prepared the sealed auction queue
     view: "setup",
@@ -548,8 +553,19 @@ function migrate(s){
   }
   if(s.startedAt==null) s.startedAt=null;
   if(!Array.isArray(s.manualPoolIds)) s.manualPoolIds=[];
+  if(!Array.isArray(s.mainPoolIds)) s.mainPoolIds=[];
+  if(!Array.isArray(s.mainPoolSeenIds)) s.mainPoolSeenIds=[];
+  if(typeof s.mainPoolFirstCycleComplete!=="boolean") s.mainPoolFirstCycleComplete=false;
+  if(!Array.isArray(s.reserveQueue)) s.reserveQueue=[];
+  if(!Array.isArray(s.reserveAuctionIds)) s.reserveAuctionIds=[];
   if(typeof s.queueBuilt!=="boolean") s.queueBuilt=Array.isArray(s.queue)&&s.queue.length>0;
   if(!Array.isArray(s.allPlayers) || !s.allPlayers.length) s.allPlayers=Array.isArray(s.players)?s.players.map(x=>({...x})):[];
+  // Backfill first-cycle tracking for states created before this feature.
+  if(!s.mainPoolIds.length && Array.isArray(s.players) && s.players.length) s.mainPoolIds=[...new Set(s.players.map(p=>p.id))];
+  if(!s.mainPoolSeenIds.length && Array.isArray(s.log)){
+    s.mainPoolSeenIds=[...new Set(s.log.filter(l=>l.type==="sold"||l.type==="passed").map(l=>l.playerId))].filter(id=>s.mainPoolIds.includes(id));
+  }
+  if(!s.mainPoolFirstCycleComplete && s.mainPoolIds.length && s.mainPoolIds.every(id=>s.mainPoolSeenIds.includes(id))) s.mainPoolFirstCycleComplete=true;
   if(s.settings.budget===100) s.settings.budget=200;
   if(s.settings.timer===20) s.settings.timer=60;
   if(s.settings.timerT1===20) s.settings.timerT1=120;
@@ -627,6 +643,7 @@ function publicState(){
     poolLocked: !!S.poolLocked,
     qIndex: Number.isFinite(+S.qIndex) ? +S.qIndex : 0,
     mainAuctionComplete: !!S.mainAuctionComplete,
+    mainPoolFirstCycleComplete: !!S.mainPoolFirstCycleComplete,
     log: (S.log||[]).slice(0,200)
   };
 }
@@ -743,6 +760,7 @@ async function loadSharedState(){
     // The manager page renders the public snapshot; the auctioneer page keeps
     // its own sealed queue, queueBuilt flag, current block and completion state.
     S.mainAuctionComplete = !!data.mainAuctionComplete;
+    S.mainPoolFirstCycleComplete = !!data.mainPoolFirstCycleComplete;
     normalizeIds();
     renderView(liveTab);
     const stamp=data.updatedAt?new Date(data.updatedAt).toLocaleTimeString():"";
@@ -1149,6 +1167,11 @@ function buildQueue(){
   S.queue = entries.map(e=>e.id);
   S.qIndex = 0;
   S.queueBuilt = S.queue.length > 0;
+  S.mainPoolIds = [...S.queue];
+  S.mainPoolSeenIds = [];
+  S.mainPoolFirstCycleComplete = false;
+  S.reserveQueue = [];
+  S.reserveAuctionIds = [];
   S.poolLocked = false;
   S.poolAudit = {
     target:S.settings.targetPool||220,
@@ -1238,9 +1261,22 @@ function timerForTier(tier){
 function nextLot(){
   clearInterval(timerH); S.onBlock=null;
 
+  // Reserve nominations are a separate priority lane. They never enter the
+  // sealed main queue and therefore never get buried behind passed players.
+  if(Array.isArray(S.reserveQueue) && S.reserveQueue.length){
+    const rid=S.reserveQueue.shift();
+    const rp=pById(rid);
+    if(rp && rp.status!=="sold" && S.participants.some(m=>eligible(m,rp))){
+      S.onBlock={pid:rp.id,bid:0,bidderId:null,reserve:true};
+      timeLeft=timerForTier(rp.tier); paused=false;
+      timerH=setInterval(tick,1000);
+      save(); renderAuction(); return;
+    }
+  }
+
   // The sealed queue is private auctioneer state. A public Manager View snapshot
   // intentionally does not contain it, so never interpret a missing queue as
-  // an exhausted auction. That would falsely show "Auction complete".
+  // an exhausted auction.
   if(!Array.isArray(S.queue) || !S.queue.length){
     if(S.queueBuilt){
       console.warn("Private auction queue is missing; refusing to mark auction complete.");
@@ -1252,32 +1288,37 @@ function nextLot(){
 
   // find next id in queue that is still available & someone could still need
   while(S.qIndex < S.queue.length){
-    const p = pById(S.queue[S.qIndex]);
+    const p=pById(S.queue[S.qIndex]);
     if(p && (p.status==="available" || p.status==="passed")){
-      // A passed player stays marked "passed" until they return to the rostrum.
-      // Once they come around again, make them available for bidding while
-      // retaining the pass history in S.log.
       if(S.participants.some(m=>eligible(m,p))){
         if(p.status==="passed") p.status="available";
+
+        // First appearance tracking is based on the finalized main pool, not
+        // on the moving passed-player queue. Once every main-pool player has
+        // appeared once, reserve nomination becomes available immediately.
+        if(Array.isArray(S.mainPoolIds) && S.mainPoolIds.includes(p.id)){
+          if(!Array.isArray(S.mainPoolSeenIds)) S.mainPoolSeenIds=[];
+          if(!S.mainPoolSeenIds.includes(p.id)) S.mainPoolSeenIds.push(p.id);
+          if(S.mainPoolIds.length && S.mainPoolIds.every(id=>S.mainPoolSeenIds.includes(id))){
+            S.mainPoolFirstCycleComplete=true;
+          }
+        }
         break;
       }
-      S.qIndex++; continue;
     }
     S.qIndex++;
   }
-  const queueExhausted = S.qIndex >= S.queue.length;
-  const squadsFilled = S.participants.length > 0 && S.participants.every(m=>slotsLeft(m)===0);
+  const queueExhausted=S.qIndex>=S.queue.length;
+  const squadsFilled=S.participants.length>0 && S.participants.every(m=>slotsLeft(m)===0);
   if(queueExhausted || squadsFilled){
     S.onBlock=null;
-    // Completion is only valid when the sealed queue was actually exhausted,
-    // or every manager has filled all 15 slots.
-    S.mainAuctionComplete = !!(queueExhausted || squadsFilled);
+    S.mainAuctionComplete=!!(queueExhausted || squadsFilled);
     save(); renderAuction(); return;
   }
-  const p = pById(S.queue[S.qIndex]);
-  S.onBlock = {pid:p.id, bid:0, bidderId:null};
-  timeLeft = timerForTier(p.tier); paused=false;
-  timerH = setInterval(tick, 1000);
+  const p=pById(S.queue[S.qIndex]);
+  S.onBlock={pid:p.id,bid:0,bidderId:null,reserve:false};
+  timeLeft=timerForTier(p.tier); paused=false;
+  timerH=setInterval(tick,1000);
   save(); renderAuction();
 }
 function tick(){
@@ -1335,6 +1376,9 @@ function hammer(){
     manager.budget=+(manager.budget-finalPrice).toFixed(1);
     manager.spent=+(manager.spent+finalPrice).toFixed(1);
     S.log.unshift({playerId:player.id,name:player.name,buyer:manager.name,buyerId:manager.id,amount:finalPrice,type:"sold",ts:Date.now()});
+    if(ob.reserve){
+      S.reserveAuctionIds=(S.reserveAuctionIds||[]).filter(id=>id!==player.id);
+    }
     S.onBlock=null;
     clearInterval(timerH);
     sndSold();
@@ -1342,7 +1386,7 @@ function hammer(){
 
     // Persist the completed sale before selecting the next player.
     save(true);
-    S.qIndex++;
+    if(!ob.reserve) S.qIndex++;
     nextLot();
     return;
   }
@@ -1355,10 +1399,19 @@ function hammer(){
   player.status="passed";
   S.log.unshift({playerId:player.id,name:player.name,buyer:"—",amount:0,type:"passed",ts:Date.now()});
 
-  // Remove the current lot and append it to the back of the queue. Since
-  // qIndex stays at the current position, nextLot() continues with the next
-  // unprocessed player. Passed players therefore only return after the first
-  // complete cycle through the original auction pool.
+  if(ob.reserve){
+    // A reserve nomination is its own priority lane. If passed, it goes to the
+    // back of that lane rather than entering the 220-player/passed queue.
+    S.reserveQueue.push(player.id);
+    clearInterval(timerH);
+    S.onBlock=null;
+    toast(`${player.name} passed — reserve nominations stay in priority order.`);
+    save(true);
+    nextLot();
+    return;
+  }
+
+  // Main-pool passed players are deferred to the end of the moving queue.
   S.queue.splice(S.qIndex,1);
   S.queue.push(player.id);
 
@@ -1709,7 +1762,8 @@ function renderRemaining(){
   const clubSel=$("#rClub"), prevClub=clubSel.value;
   const source=Array.isArray(S.allPlayers)?S.allPlayers:[];
   const poolIds=new Set(S.players.map(p=>p.id));
-  const excluded=S.queueBuilt ? source.filter(p=>!poolIds.has(p.id)) : [];
+  const reserveTaken=new Set([...(S.reserveAuctionIds||[]),...((S.reserveQueue||[]))]);
+  const excluded=S.queueBuilt ? source.filter(p=>!poolIds.has(p.id) && !reserveTaken.has(p.id)) : [];
   const clubs=[...new Set(excluded.map(p=>p.team))].sort();
   clubSel.innerHTML='<option value="">All clubs</option>'+clubs.map(c=>`<option${c===prevClub?" selected":""}>${esc(c)}</option>`).join("");
   const q=$("#rSearch").value.toLowerCase(), pos=$("#rPos").value, club=clubSel.value, tier=$("#rTier").value;
@@ -1717,7 +1771,7 @@ function renderRemaining(){
   rows.sort((a,b)=>{const va=a[rSortKey],vb=b[rSortKey];return (va>vb?1:va<vb?-1:0)*rSortDir;});
   $("#rCount").textContent=S.queueBuilt ? rows.length+" players outside the main auction pool" : "Pool not built yet";
   const th=$("#rthPts"); if(th) th.textContent=(S.statsLabel||"25/26")+" pts";
-  const canNominate=S.mainAuctionComplete;
+  const canNominate=!!S.mainPoolFirstCycleComplete;
   const manualIds=new Set(Array.isArray(S.manualPoolIds)?S.manualPoolIds:[]);
   const banner=$("#remainingStateBanner");
   if(banner){
@@ -1725,28 +1779,28 @@ function renderRemaining(){
       ? `<div class="card" style="padding:16px;border:1.5px solid var(--turf);background:var(--turf-soft)">
            <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
              <div>
-               <div style="font-family:'Chakra Petch';font-weight:800;font-size:18px;color:var(--turf);letter-spacing:.5px">✓ MAIN AUCTION COMPLETE</div>
-               <div class="small" style="margin-top:3px">Choose a reserve player below to bring them into the auction for a fresh nomination.</div>
+               <div style="font-family:'Chakra Petch';font-weight:800;font-size:18px;color:var(--turf);letter-spacing:.5px">✓ MAIN POOL FIRST ROUND COMPLETE</div>
+               <div class="small" style="margin-top:3px">Every main-auction player has appeared once. Passed players can continue, and you can now bring any reserve player directly into the auction.</div>
              </div>
-             <span class="pill" style="background:var(--turf);color:var(--bg);font-size:12px;padding:6px 11px">NOMINATION OPEN</span>
+             <span class="pill" style="background:var(--turf);color:var(--bg);font-size:12px;padding:6px 11px">RESERVE NOMINATION OPEN</span>
            </div>
          </div>`
       : `<div class="card" style="padding:16px;border:1px solid var(--line);background:var(--card2)">
            <div style="font-family:'Chakra Petch';font-weight:800;font-size:16px">ADD PLAYERS TO THE MAIN AUCTION POOL</div>
-           <div class="small muted" style="margin-top:3px">You can manually add any player from the Reserve Pool. Added players will be included in the auction queue.</div>
+           <div class="small muted" style="margin-top:3px">Before the auction starts, add any missed player here. Added players join the main pool and are randomized into the sealed auction order.</div>
          </div>`;
   }
   $("#remTable tbody").innerHTML=rows.slice(0,600).map(p=>{
     const inManual=manualIds.has(p.id);
     const action=canNominate
-      ? `<button class="nominate-btn" data-nominate="${esc(p.id)}">${inManual?"Nominate":"Add & Nominate"}</button>`
+      ? `<button class="nominate-btn" data-nominate="${esc(p.id)}">⚡ Bring to Auction</button>`
       : `<button class="nominate-btn" data-addpool="${esc(p.id)}" ${inManual?'disabled':''}>${inManual?"✓ Added to Pool":"Add to Auction Pool"}</button>`;
     return `<tr><td><b>${esc(p.name)}</b></td><td>${esc(p.team)}</td><td class="pos-${p.pos}"><b>${p.pos}</b></td><td class="mono">${fmt(p.price)}</td><td><span class="pill tier-${p.tier}">T${p.tier}</span></td><td class="mono">${p.pts??"—"}</td><td class="mono">${p.ppg!=null?(+p.ppg).toFixed(1):"—"}</td><td>${action}</td></tr>`;
   }).join("");
 }
 function addPlayerToAuctionPool(pid){
-  if(S.mainAuctionComplete){
-    toast("Main auction is complete — use Add & Nominate to bring a reserve player up for bidding.");
+  if(S.started){
+    toast("The main auction has already started — use Bring to Auction after the first main-pool round.");
     return;
   }
   const source=allById(pid);
@@ -1767,22 +1821,23 @@ function addPlayerToAuctionPool(pid){
 }
 
 function nominatePlayer(pid){
-  if(!S.mainAuctionComplete){toast("Finish the main auction before nominating reserve players.");return;}
+  if(!S.mainPoolFirstCycleComplete){toast("All main-auction players must appear once before reserve nominations open.");return;}
   const source=allById(pid); if(!source){toast("Player not found.");return;}
   if(S.players.some(p=>p.id===pid)){toast(`${source.name} is already in the auction pool.`);return;}
-  S.players.push({...source,status:"available",ownerId:null,paid:0});
-  S.queue.push(pid);
-  // Keep mainAuctionComplete=true: this is now the post-auction nomination phase.
-  // The nominated player is immediately sent to the rostrum for bidding.
-  save();
-  toast(`${source.name} nominated ✓`);
+  if((S.reserveQueue||[]).includes(pid) || (S.reserveAuctionIds||[]).includes(pid)){toast(`${source.name} is already queued for the auction.`);return;}
+
+  // Keep reserve players outside S.players so they remain a reserve-source
+  // player rather than becoming part of the sealed main pool. Put them in a
+  // dedicated priority queue; if a lot is currently running, this player is
+  // simply the next lot after that current bidding round finishes.
+  if(!Array.isArray(S.reserveQueue)) S.reserveQueue=[];
+  if(!Array.isArray(S.reserveAuctionIds)) S.reserveAuctionIds=[];
+  S.reserveQueue.push(pid);
+  S.reserveAuctionIds.push(pid);
+  save(true);
+  toast(`${source.name} brought into the auction ✓`);
   renderRemaining();
-  if(!S.onBlock){
-    S.qIndex=S.queue.length-1;
-    nextLot();
-  }else{
-    renderView(S.view);
-  }
+  if(!S.onBlock) nextLot();
 }
 function renderSquads(){
   const q=S.settings.quota;
@@ -2076,7 +2131,7 @@ document.addEventListener("click", e=>{
       S.poolAudit=null;
 
       S.participants.forEach(m=>{m.budget=S.settings.budget; m.spent=0;});
-      S.log=[]; S.board=null; S.onBlock=null; S.started=false; S.startedAt=null; S.mainAuctionComplete=false;
+      S.log=[]; S.board=null; S.onBlock=null; S.started=false; S.startedAt=null; S.mainAuctionComplete=false; S.mainPoolIds=[]; S.mainPoolSeenIds=[]; S.mainPoolFirstCycleComplete=false; S.reserveQueue=[]; S.reserveAuctionIds=[];
       S.subs={}; S.subHistory=[];
 
       // Save locally and immediately overwrite Cloudflare so every Manager View
