@@ -579,6 +579,10 @@ function persistLocal(){
   localStorage.setItem(LS_KEY, JSON.stringify(S));
 }
 function save(immediate=false){
+  // Manager View is strictly read-only. Do not even write its local state to
+  // localStorage, because a storage event would make the auctioneer tab load
+  // the manager tab's snapshot and could alter the live auction.
+  if(LIVE_VIEW) return;
   persistLocal();
   if(!LIVE_VIEW){
     if(immediate){
@@ -710,8 +714,9 @@ async function loadSharedState(){
     S.rawLoaded = privateRawLoaded;
     S.view=liveTab;
     S.profileSelected = liveProfileSelected || 1;
-    // Manager View must never run auction-engine actions.
-    S.queueBuilt = false;
+    // Manager View is read-only. Never change auctioneer-only flags here.
+    // The manager page renders the public snapshot; the auctioneer page keeps
+    // its own sealed queue, queueBuilt flag, current block and completion state.
     S.mainAuctionComplete = !!data.mainAuctionComplete;
     normalizeIds();
     renderView(liveTab);
