@@ -475,6 +475,10 @@ const SHARED_STATE_KEY = "3a19uoe284PVE8It-itgdON-MjCd-Py9";
 const LIVE_PARAMS = new URLSearchParams(location.search);
 const LIVE_VIEW = LIVE_PARAMS.get("live") === "1" || LIVE_PARAMS.get("manager") === "1" || LIVE_PARAMS.get("mode") === "manager" || ["#squads-live","#players-live","#profiles-live"].includes(location.hash);
 let sharedPublishTimer = null;
+let sharedPublishPending = false;
+let sharedPublishInFlight = null;
+let lastSharedPublishAt = 0;
+let lastPublishedSharedPayload = "";
 const POS = ["GK","DEF","MID","FWD"];
 const SUB_POS = ["DEF","MID","FWD"];
 const DEFAULT_NAMES = ["Aakash","Abhi","Anish","Kumar","Kishu","Shanky","Vichu","Vinod"];
@@ -518,12 +522,26 @@ function migrate(s){
   if(!s) return s;
   const d = freshState().settings;
   s.settings = Object.assign({}, d, s.settings||{});
+  // PIRLO Boys squads are fixed at 15 players: 2 GK, 5 DEF, 5 MID, 3 FWD.
+  // Never let an older/stale shared snapshot (e.g. 2/6/6/4) change completion math.
+  s.settings.quota = {GK:2, DEF:5, MID:5, FWD:3};
   if(s.settings.openBid==null) s.settings.openBid = 1;
   if(!Array.isArray(s.settings.tiers) || s.settings.tiers.length!==2) s.settings.tiers=[7.5,5.5];
   if(!(+(s.settings.timerT1)>0)) s.settings.timerT1=s.settings.timer||20;
   if(!(+(s.settings.timerT2)>0)) s.settings.timerT2=Math.max(5,(s.settings.timer||20)-5);
   if(!(+(s.settings.timerT3)>0)) s.settings.timerT3=Math.max(5,(s.settings.timer||20)-10);
   if(s.mainAuctionComplete==null) s.mainAuctionComplete=false;
+  // A stale completion flag is never authoritative. If the private queue still
+  // has unprocessed lots and squads are not full, the main auction is not done.
+  if(s.mainAuctionComplete && Array.isArray(s.queue) && s.queue.length){
+    const queueStillHasLots = (+s.qIndex||0) < s.queue.length;
+    const squadsFilled = Array.isArray(s.participants) && s.participants.length > 0 && s.participants.every(m=>{
+      const q=s.settings.quota||{GK:2,DEF:5,MID:5,FWD:3};
+      const owned=Array.isArray(s.players)?s.players.filter(p=>p.ownerId===m.id):[];
+      return owned.length >= Object.values(q).reduce((a,b)=>a+b,0);
+    });
+    if(queueStillHasLots && !squadsFilled) s.mainAuctionComplete=false;
+  }
   if(s.startedAt==null) s.startedAt=null;
   if(!Array.isArray(s.manualPoolIds)) s.manualPoolIds=[];
   if(typeof s.queueBuilt!=="boolean") s.queueBuilt=Array.isArray(s.queue)&&s.queue.length>0;
@@ -595,45 +613,74 @@ function publicState(){
 function scheduleSharedPublish(){
   if(LIVE_VIEW) return;
   clearTimeout(sharedPublishTimer);
-  // Publish only after an actual state change. Keep a small debounce so several
-  // rapid changes collapse into one KV write.
+  // Coalesce rapid local changes into one pending shared-state publish.
+  sharedPublishPending = true;
   const wait=Math.max(350,1100-(Date.now()-lastSharedPublishAt));
-  sharedPublishTimer=setTimeout(publishSharedState,wait);
+  sharedPublishTimer=setTimeout(()=>{ publishSharedState(); },wait);
 }
 async function publishSharedState(){
+  if(LIVE_VIEW) return false;
+  clearTimeout(sharedPublishTimer);
+  sharedPublishPending = true;
+
+  if(sharedPublishInFlight) return sharedPublishInFlight;
+
+  sharedPublishInFlight = (async()=>{
+    let wrote=false;
+    try{
+      while(sharedPublishPending){
+        sharedPublishPending=false;
+
+        const elapsed=Date.now()-lastSharedPublishAt;
+        if(elapsed<1100){
+          await new Promise(resolve=>setTimeout(resolve,1100-elapsed));
+        }
+
+        // Take the latest state only after the throttle wait. Any changes made
+        // while waiting remain represented by this newest snapshot.
+        const state=publicState();
+        const compareState={...state,updatedAt:0};
+        const comparePayload=JSON.stringify(compareState);
+        const payload=JSON.stringify(state);
+
+        // updatedAt changes on every snapshot, so compare only the meaningful
+        // public state. Do not spend a KV write if nothing actually changed.
+        if(comparePayload===lastPublishedSharedPayload) continue;
+
+        const r=await fetch(SHARED_STATE_URL,{
+          method:"POST",
+          headers:{"Content-Type":"application/json","X-Auction-Key":SHARED_STATE_KEY},
+          body:payload,
+          mode:"cors",
+          cache:"no-store"
+        });
+        if(!r.ok) throw new Error("HTTP "+r.status);
+        lastSharedPublishAt=Date.now();
+        lastPublishedSharedPayload=comparePayload;
+        wrote=true;
+        console.log("Shared auction published",{
+          players:state.players.length,
+          started:state.started,
+          updatedAt:state.updatedAt,
+          status:r.status
+        });
+        // If another save() happened during the POST, sharedPublishPending is
+        // already true and the loop publishes only the newest state.
+      }
+    }catch(e){
+      console.warn("Shared auction publish failed:",e);
+    }finally{
+      sharedPublishInFlight=null;
+    }
+    return wrote;
+  })();
+
+  return sharedPublishInFlight;
+}
+function publishSharedNow(){
   if(LIVE_VIEW) return Promise.resolve(false);
   clearTimeout(sharedPublishTimer);
-
-  sharedPublishChain = sharedPublishChain.catch(()=>{}).then(async()=>{
-    const elapsed = Date.now() - lastSharedPublishAt;
-    if(elapsed < 1100) await new Promise(resolve=>setTimeout(resolve,1100-elapsed));
-
-    // Snapshot the CURRENT admin state only after the KV write throttle wait.
-    // A Manager View can never enter this path because LIVE_VIEW is read-only.
-    const state = publicState();
-    const payload = JSON.stringify(state);
-    const r = await fetch(SHARED_STATE_URL,{
-      method:"POST",
-      headers:{"Content-Type":"application/json","X-Auction-Key":SHARED_STATE_KEY},
-      body:payload,
-      mode:"cors",
-      cache:"no-store"
-    });
-    if(!r.ok) throw new Error("HTTP "+r.status);
-    lastSharedPublishAt = Date.now();
-    console.log("Shared auction published", {players:state.players.length, started:state.started, updatedAt:state.updatedAt, status:r.status});
-    return true;
-  }).catch(e=>{
-    console.warn("Shared auction publish failed:",e);
-    return false;
-  });
-  return sharedPublishChain;
-}
-let sharedPublishChain = Promise.resolve();
-let lastSharedPublishAt = 0;
-function publishSharedNow(){
-  if(LIVE_VIEW) return Promise.resolve();
-  clearTimeout(sharedPublishTimer);
+  sharedPublishPending=true;
   return publishSharedState();
 }
 
@@ -648,9 +695,24 @@ async function loadSharedState(){
     if(!data || !Array.isArray(data.players) || !Array.isArray(data.participants)) throw new Error("Invalid shared state");
     const liveTab = ["players","liveRemaining","profiles"].includes(S.view) ? S.view : "squads";
     const liveProfileSelected = S.profileSelected;
+
+    // IMPORTANT: shared Manager View is a public snapshot. It deliberately omits
+    // the sealed auction queue and current on-block object. Merge only public
+    // fields so a live refresh can NEVER replace the auctioneer's private queue.
+    const privateQueue = Array.isArray(S.queue) ? S.queue : [];
+    const privateOnBlock = S.onBlock || null;
+    const privateAllPlayers = Array.isArray(S.allPlayers) ? S.allPlayers : [];
+    const privateRawLoaded = !!S.rawLoaded;
     S=migrate(data);
+    S.queue = privateQueue;
+    S.onBlock = privateOnBlock;
+    S.allPlayers = privateAllPlayers;
+    S.rawLoaded = privateRawLoaded;
     S.view=liveTab;
     S.profileSelected = liveProfileSelected || 1;
+    // Manager View must never run auction-engine actions.
+    S.queueBuilt = false;
+    S.mainAuctionComplete = !!data.mainAuctionComplete;
     normalizeIds();
     renderView(liveTab);
     const stamp=data.updatedAt?new Date(data.updatedAt).toLocaleTimeString():"";
@@ -1145,6 +1207,19 @@ function timerForTier(tier){
 }
 function nextLot(){
   clearInterval(timerH); S.onBlock=null;
+
+  // The sealed queue is private auctioneer state. A public Manager View snapshot
+  // intentionally does not contain it, so never interpret a missing queue as
+  // an exhausted auction. That would falsely show "Auction complete".
+  if(!Array.isArray(S.queue) || !S.queue.length){
+    if(S.queueBuilt){
+      console.warn("Private auction queue is missing; refusing to mark auction complete.");
+      toast("Auction queue is missing — auction NOT marked complete.");
+    }
+    renderAuction();
+    return;
+  }
+
   // find next id in queue that is still available & someone could still need
   while(S.qIndex < S.queue.length){
     const p = pById(S.queue[S.qIndex]);
@@ -1155,9 +1230,13 @@ function nextLot(){
     }
     S.qIndex++;
   }
-  if(S.qIndex >= S.queue.length || S.participants.every(m=>slotsLeft(m)===0)){
+  const queueExhausted = S.qIndex >= S.queue.length;
+  const squadsFilled = S.participants.length > 0 && S.participants.every(m=>slotsLeft(m)===0);
+  if(queueExhausted || squadsFilled){
     S.onBlock=null;
-    if(S.qIndex >= S.queue.length) S.mainAuctionComplete=true;
+    // Completion is only valid when the sealed queue was actually exhausted,
+    // or every manager has filled all 15 slots.
+    S.mainAuctionComplete = !!(queueExhausted || squadsFilled);
     save(); renderAuction(); return;
   }
   const p = pById(S.queue[S.qIndex]);
@@ -1476,8 +1555,14 @@ function renderAuction(){
     if(lot) lot.textContent="";
     R.innerHTML=`<div class="auction-not-started"><div class="big">Auction not started</div><div class="small muted" style="margin:8px 0 18px">Build & lock the ${S.settings.targetPool||220}-player queue in Setup first.</div><button class="btn gold" id="btnAuctionStart">🔨 START AUCTION</button></div>`;
   }else if(!S.onBlock){
-    if(lot) lot.textContent="COMPLETE";
-    R.innerHTML=`<div class="auction-not-started"><div class="big">🏁 Auction complete!</div><div class="small muted">Every squad is filled or no eligible bidders remain. Check the Squads tab for final rosters.</div></div>`;
+    // Never display completion merely because the current block is empty.
+    // The completion flag is set only by nextLot() after a real end condition.
+    if(lot) lot.textContent=S.mainAuctionComplete?"COMPLETE":"WAITING";
+    if(S.mainAuctionComplete){
+      R.innerHTML=`<div class="auction-not-started"><div class="big">🏁 Auction complete!</div><div class="small muted">Every squad is filled or the sealed main-auction queue has been exhausted. Check the Squads tab for final rosters.</div></div>`;
+    }else{
+      R.innerHTML=`<div class="auction-not-started"><div class="big">⏳ Auction state needs recovery</div><div class="small muted">The current player is unavailable, but the auction has NOT been marked complete. Use Refresh or reload the auctioneer tab.</div></div>`;
+    }
   }else{
     const p=pById(S.onBlock.pid), ob=S.onBlock, w=ob.bidderId?partById(ob.bidderId):null;
     const priceOk=w && ob.bid>=S.settings.openBid && ob.bid<=maxBid(w);
