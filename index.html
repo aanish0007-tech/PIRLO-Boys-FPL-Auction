@@ -560,10 +560,10 @@ function migrate(s){
   if(s.settings.timerT3===10) s.settings.timerT3=60;
   if(s.settings.targetPool===200) s.settings.targetPool=220;
   if(!(+s.settings.targetPool>0)) s.settings.targetPool=220;
-  if(!(+s.settings.guaranteeMin>0)) s.settings.guaranteeMin=6.5;
+  s.settings.guaranteeMin=6.5;
   if(!(+s.settings.earlyGW>0)) s.settings.earlyGW=2;
   if(s.settings.earlyPoints==null || isNaN(+s.settings.earlyPoints)) s.settings.earlyPoints=6;
-  if(s.settings.guaranteeMin===5.5 || s.settings.guaranteeMin===6.0) s.settings.guaranteeMin=6.5;   // upgrade the old default
+  s.settings.guaranteeMin=6.5;
   delete s.settings.poolCaps;
   delete s.settings.leagueId;
   s.board = s.board || null;
@@ -626,7 +626,7 @@ function publicState(){
     // Manager View needs the actual Reserve Pool: complete FPL source minus
     // the selected auction pool. The sealed auction queue is never published.
     reservePlayers: (Array.isArray(S.allPlayers)?S.allPlayers:[])
-      .filter(p=>p.price < (S.settings.guaranteeMin || 6.5) && !mainPoolIds.has(p.id) && !reserveSoldIds.has(p.id) && p.id!==reserveHeldId)
+      .filter(p=>Number(p.price) < 6.5 && !mainPoolIds.has(p.id) && !reserveSoldIds.has(p.id) && p.id!==reserveHeldId)
       .map(playerPublic),
     settings: { quota: S.settings.quota },
     started: !!S.started,
@@ -871,12 +871,25 @@ function tierFor(price){
       allocated by how many sub-guarantee slots each position still needs
       (position quota x managers, minus guaranteed players already covering it).
    3) If guaranteed players alone exceed the target, the pool runs over - by design. */
+function enforceGuaranteeInAuctionPool(){
+  // Hard invariant before the auction starts: every FPL player priced at or above £6.5m
+  // must be present in the main auction pool. Never run this after the auction is started.
+  if(S.started || !Array.isArray(S.allPlayers) || !S.allPlayers.length) return false;
+  const guarantee=6.5;
+  const mandatory=S.allPlayers.filter(p=>Number(p.price)>=guarantee);
+  if(!mandatory.length) return false;
+  const current=new Set(Array.isArray(S.players)?S.players.map(p=>p.id):[]);
+  const missing=mandatory.filter(p=>!current.has(p.id));
+  if(!missing.length) return false;
+  S.players=trimPool(S.allPlayers);
+  return true;
+}
 function trimPool(list){
   // Every player at or above guaranteeMin MUST be included, even if that
   // makes the auction pool larger than targetPool. The target only controls
   // how many additional players are selected below the guarantee threshold.
   const target = Math.min(S.settings.targetPool || 220, list.length);
-  const guarantee = S.settings.guaranteeMin || 6.5;
+  const guarantee = 6.5;
   const q = S.settings.quota, n = S.participants.length || 8;
   const [t1,t2] = S.settings.tiers;
 
@@ -1148,6 +1161,7 @@ function renderSetup(){
    random positions in [0,1), so every stretch of the auction contains a
    proportional mix of all tiers. Order is never displayed. */
 function buildQueue(){
+  if(!S.started){ S.players=trimPool(S.allPlayers||[]); }
   if(!S.rawLoaded || !Array.isArray(S.allPlayers) || !S.allPlayers.length){
     toast("Refresh FPL Pool first to load the player source.");
     return;
@@ -1735,6 +1749,7 @@ function renderAuctionSquads(){
 
 let sortKey="price", sortDir=-1;
 function renderPool(){
+  enforceGuaranteeInAuctionPool();
   if(LIVE_VIEW){
     const note=$("#livePoolNote");
     if(note){
@@ -1784,7 +1799,7 @@ function renderLiveRemaining(){
   const q=((($("#liveRemainingSearch")||{}).value)||"").toLowerCase();
   const pos=((($("#liveRemainingPos")||{}).value)||"");
   const source=Array.isArray(S.reservePlayers) ? S.reservePlayers : [];
-  const rows=source.filter(p=>p.price < (S.settings.guaranteeMin || 6.5) &&
+  const rows=source.filter(p=>Number(p.price) < 6.5 &&
     (!q || p.name.toLowerCase().includes(q) || (p.web||"").toLowerCase().includes(q) || p.team.toLowerCase().includes(q)) &&
     (!pos || p.pos===pos)
   ).sort((a,b)=>b.price-a.price || (b.earlyTotal||0)-(a.earlyTotal||0) || (b.pts||0)-(a.pts||0));
@@ -1805,7 +1820,7 @@ function renderRemaining(){
   const reserveTaken=new Set();
   if(S.nextReservePlayerId!=null) reserveTaken.add(S.nextReservePlayerId);
   if(S.onBlock && S.onBlock.reserve) reserveTaken.add(S.onBlock.pid);
-  const excluded=S.queueBuilt ? source.filter(p=>p.price < (S.settings.guaranteeMin || 6.5) && !mainPoolIds.has(p.id) && !reserveSoldIds.has(p.id) && !reserveTaken.has(p.id)) : [];
+  const excluded=S.queueBuilt ? source.filter(p=>Number(p.price) < 6.5 && !mainPoolIds.has(p.id) && !reserveSoldIds.has(p.id) && !reserveTaken.has(p.id)) : [];
   const clubs=[...new Set(excluded.map(p=>p.team))].sort();
   clubSel.innerHTML='<option value="">All clubs</option>'+clubs.map(c=>`<option${c===prevClub?" selected":""}>${esc(c)}</option>`).join("");
   const q=$("#rSearch").value.toLowerCase(), pos=$("#rPos").value, club=clubSel.value, tier=$("#rTier").value;
