@@ -683,6 +683,27 @@ async function publishSharedState(){
           mode:"cors",
           cache:"no-store"
         });
+
+        // If another auctioneer/browser has already published a newer
+        // revision, the Worker returns 409. Keep our current auction state,
+        // move its revision ahead of the server revision, and retry the
+        // latest snapshot instead of silently leaving Manager View stale.
+        if(r.status===409){
+          let conflict=null;
+          try{ conflict=await r.json(); }catch{}
+          const serverRevision=Math.max(0,Math.floor(+(conflict&&conflict.currentRevision)||0));
+          const localRevision=Math.max(0,Math.floor(+S.sharedRevision||0));
+          S.sharedRevision=Math.max(localRevision,serverRevision)+1;
+          persistLocal();
+          sharedPublishPending=true;
+          console.warn("Shared auction revision conflict; retrying",{
+            serverRevision,
+            previousLocalRevision:localRevision,
+            retryRevision:S.sharedRevision
+          });
+          continue;
+        }
+
         if(!r.ok) throw new Error("HTTP "+r.status);
         lastSharedPublishAt=Date.now();
         lastPublishedSharedPayload=comparePayload;
