@@ -872,10 +872,11 @@ function tierFor(price){
       (position quota x managers, minus guaranteed players already covering it).
    3) If guaranteed players alone exceed the target, the pool runs over - by design. */
 function trimPool(list){
-  // Target pool is a HARD CAP. Every premium/Tier 1 player is always included
-  // first, then Tier 2 players, then Tier 3 players fill the remaining slots.
-  // Within each tier, early-season performers are preferred, then price/points.
-  const target = Math.min(S.settings.targetPool || 200, list.length);
+  // Every player at or above guaranteeMin MUST be included, even if that
+  // makes the auction pool larger than targetPool. The target only controls
+  // how many additional players are selected below the guarantee threshold.
+  const target = Math.min(S.settings.targetPool || 220, list.length);
+  const guarantee = S.settings.guaranteeMin || 6.0;
   const q = S.settings.quota, n = S.participants.length || 8;
   const [t1,t2] = S.settings.tiers;
 
@@ -887,32 +888,38 @@ function trimPool(list){
 
   const selected = new Set();
 
-  // Premium/Tier 1 players are mandatory in the shortlist, provided they fit
-  // inside the hard target. This prevents any T1 player being left in Remaining.
-  const premium = list.filter(p=>p.price>=t1).sort(priority);
-  for(const p of premium){
-    if(selected.size>=target) break;
-    selected.add(p.id);
-  }
+  // HARD GUARANTEE: every player priced >= guaranteeMin is mandatory.
+  // Never stop this loop because of targetPool.
+  const guaranteed = list.filter(p=>p.price>=guarantee).sort(priority);
+  for(const p of guaranteed) selected.add(p.id);
 
-  // Then prioritize Tier 2, while making sure every position has enough
-  // players for all managers' starting-squad quotas.
-  for(const ps of POS){
-    const need = Math.min((q[ps]||0)*n, target-selected.size);
-    const candidates = list
-      .filter(p=>p.pos===ps && !selected.has(p.id) && p.price>=t2 && p.price<t1)
-      .sort(priority);
-    for(let i=0; i<need && i<candidates.length; i++) selected.add(candidates[i].id);
-  }
+  // Fill the remaining target slots with cheaper players, while preserving
+  // enough players at each position for all managers' starting quotas.
+  const remainingSlots = Math.max(0, target-selected.size);
+  if(remainingSlots>0){
+    const before = selected.size;
 
-  // Fill any remaining slots with the strongest Tier 2 players first, then T3.
-  if(selected.size < target){
-    const remaining = list.filter(p=>!selected.has(p.id)).sort((a,b)=>
-      (tierFor(b.price)-tierFor(a.price)) || priority(a,b)
-    );
-    for(const p of remaining){
-      if(selected.size>=target) break;
-      selected.add(p.id);
+    for(const ps of POS){
+      const need = Math.min((q[ps]||0)*n, target-selected.size);
+      const candidates = list
+        .filter(p=>p.pos===ps && !selected.has(p.id) && p.price<guarantee)
+        .sort((a,b)=>{
+          const at = tierFor(a.price), bt = tierFor(b.price);
+          return (bt-at) || priority(a,b);
+        });
+      for(let i=0; i<need && i<candidates.length && selected.size<target; i++) selected.add(candidates[i].id);
+    }
+
+    // Fill any remaining slots with the strongest players below the guarantee.
+    if(selected.size < target){
+      const candidates = list.filter(p=>!selected.has(p.id) && p.price<guarantee).sort((a,b)=>{
+        const at = tierFor(a.price), bt = tierFor(b.price);
+        return (bt-at) || priority(a,b);
+      });
+      for(const p of candidates){
+        if(selected.size>=target) break;
+        selected.add(p.id);
+      }
     }
   }
 
