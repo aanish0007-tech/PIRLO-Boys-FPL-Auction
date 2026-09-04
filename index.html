@@ -308,7 +308,7 @@ header{box-shadow:0 6px 30px rgba(0,0,0,.28)}
         </div>
         <div class="frow">
           <div class="field"><label>Target pool size</label><input type="number" id="setTarget" value="220"></div>
-          <div class="field"><label>Always include players ≥ (£m)</label><input type="number" id="setGuarantee" step="0.5" value="6.0"></div>
+          <div class="field"><label>Always include players ≥ (£m)</label><input type="number" id="setGuarantee" step="0.5" value="6.5"></div>
         </div>
         <p class="muted small"><b>Target pool size controls the main auction only.</b> The complete FPL source is retained separately. Players outside the selected pool appear in the <b>Reserve Pool</b> tab and can be nominated after the main auction finishes.</p>
       </div>
@@ -484,7 +484,7 @@ function freshState(){
     profiles: JSON.parse(JSON.stringify(STATIC_PROFILES)),
     subs: {},              // managerId -> {DEF: playerId|null, MID: playerId|null, FWD: playerId|null}
     subHistory: [],        // {managerId,outId,inId,ts}
-    settings: {budget:200, timer:60, timerT1:120, timerT2:60, timerT3:60, openBid:1, minBid:1, quota:{GK:2,DEF:5,MID:5,FWD:3}, minPrice:4.0, tiers:[7.5,5.5], targetPool:220, guaranteeMin:6.0, earlyGW:2, earlyPoints:6, sound:true},
+    settings: {budget:200, timer:60, timerT1:120, timerT2:60, timerT3:60, openBid:1, minBid:1, quota:{GK:2,DEF:5,MID:5,FWD:3}, minPrice:4.0, tiers:[7.5,5.5], targetPool:220, guaranteeMin:6.5, earlyGW:2, earlyPoints:6, sound:true},
     queue: [],              // player ids, sealed order
     qIndex: 0,
     onBlock: null,          // {pid, bid, bidderId}
@@ -560,10 +560,10 @@ function migrate(s){
   if(s.settings.timerT3===10) s.settings.timerT3=60;
   if(s.settings.targetPool===200) s.settings.targetPool=220;
   if(!(+s.settings.targetPool>0)) s.settings.targetPool=220;
-  if(!(+s.settings.guaranteeMin>0)) s.settings.guaranteeMin=6.0;
+  if(!(+s.settings.guaranteeMin>0)) s.settings.guaranteeMin=6.5;
   if(!(+s.settings.earlyGW>0)) s.settings.earlyGW=2;
   if(s.settings.earlyPoints==null || isNaN(+s.settings.earlyPoints)) s.settings.earlyPoints=6;
-  if(s.settings.guaranteeMin===5.5) s.settings.guaranteeMin=6.0;   // upgrade the old default
+  if(s.settings.guaranteeMin===5.5 || s.settings.guaranteeMin===6.0) s.settings.guaranteeMin=6.5;   // upgrade the old default
   delete s.settings.poolCaps;
   delete s.settings.leagueId;
   s.board = s.board || null;
@@ -626,7 +626,7 @@ function publicState(){
     // Manager View needs the actual Reserve Pool: complete FPL source minus
     // the selected auction pool. The sealed auction queue is never published.
     reservePlayers: (Array.isArray(S.allPlayers)?S.allPlayers:[])
-      .filter(p=>!mainPoolIds.has(p.id) && !reserveSoldIds.has(p.id) && p.id!==reserveHeldId)
+      .filter(p=>p.price < (S.settings.guaranteeMin || 6.5) && !mainPoolIds.has(p.id) && !reserveSoldIds.has(p.id) && p.id!==reserveHeldId)
       .map(playerPublic),
     settings: { quota: S.settings.quota },
     started: !!S.started,
@@ -876,7 +876,7 @@ function trimPool(list){
   // makes the auction pool larger than targetPool. The target only controls
   // how many additional players are selected below the guarantee threshold.
   const target = Math.min(S.settings.targetPool || 220, list.length);
-  const guarantee = S.settings.guaranteeMin || 6.0;
+  const guarantee = S.settings.guaranteeMin || 6.5;
   const q = S.settings.quota, n = S.participants.length || 8;
   const [t1,t2] = S.settings.tiers;
 
@@ -1103,7 +1103,7 @@ function readSetupInputs(){
   S.settings.tiers = [+$("#tT1").value||7.5, +$("#tT2").value||5.5];
   S.settings.quota = {GK:+$("#qGK").value||2, DEF:+$("#qDEF").value||5, MID:+$("#qMID").value||5, FWD:+$("#qFWD").value||3};
   S.settings.targetPool = Math.max(150,+$("#setTarget").value||220);
-  S.settings.guaranteeMin = +$("#setGuarantee").value||6.0;
+  S.settings.guaranteeMin = +$("#setGuarantee").value||6.5;
   if($("#setEarlyPoints")) S.settings.earlyPoints = Math.max(0,+$("#setEarlyPoints").value||0);
   S.settings.sound = $("#setSound").checked;
   S.participants.forEach((m,i)=>{ if(m) m.name = FIXED_MANAGER_NAMES[i] || m.name; });
@@ -1120,7 +1120,7 @@ function renderSetup(){
   [$("#tT1").value,$("#tT2").value]=S.settings.tiers;
   $("#qGK").value=S.settings.quota.GK; $("#qDEF").value=S.settings.quota.DEF; $("#qMID").value=S.settings.quota.MID; $("#qFWD").value=S.settings.quota.FWD;
   $("#setTarget").value=S.settings.targetPool||220;
-  $("#setGuarantee").value=S.settings.guaranteeMin||6.0;
+  $("#setGuarantee").value=S.settings.guaranteeMin||6.5;
   if($("#setEarlyPoints")) $("#setEarlyPoints").value=S.settings.earlyPoints??6;
   $("#setSound").checked=S.settings.sound;
   $("#pnames").innerHTML = S.participants.map((p,i)=>`
@@ -1198,7 +1198,7 @@ function buildQueue(){
   S.poolLocked = false;
   S.poolAudit = {
     target:S.settings.targetPool||220,
-    protected:S.players.filter(p=>p.earlyProtected || p.price >= (S.settings.guaranteeMin||6)).length,
+    protected:S.players.filter(p=>p.earlyProtected || p.price >= (S.settings.guaranteeMin||6.5)).length,
     earlyProtected:S.players.filter(p=>p.earlyProtected).length,
     earlyGW:S.settings.earlyGW||2,
     earlyPoints:S.settings.earlyPoints||6
@@ -1784,7 +1784,7 @@ function renderLiveRemaining(){
   const q=((($("#liveRemainingSearch")||{}).value)||"").toLowerCase();
   const pos=((($("#liveRemainingPos")||{}).value)||"");
   const source=Array.isArray(S.reservePlayers) ? S.reservePlayers : [];
-  const rows=source.filter(p=>
+  const rows=source.filter(p=>p.price < (S.settings.guaranteeMin || 6.5) &&
     (!q || p.name.toLowerCase().includes(q) || (p.web||"").toLowerCase().includes(q) || p.team.toLowerCase().includes(q)) &&
     (!pos || p.pos===pos)
   ).sort((a,b)=>b.price-a.price || (b.earlyTotal||0)-(a.earlyTotal||0) || (b.pts||0)-(a.pts||0));
@@ -1805,7 +1805,7 @@ function renderRemaining(){
   const reserveTaken=new Set();
   if(S.nextReservePlayerId!=null) reserveTaken.add(S.nextReservePlayerId);
   if(S.onBlock && S.onBlock.reserve) reserveTaken.add(S.onBlock.pid);
-  const excluded=S.queueBuilt ? source.filter(p=>!mainPoolIds.has(p.id) && !reserveSoldIds.has(p.id) && !reserveTaken.has(p.id)) : [];
+  const excluded=S.queueBuilt ? source.filter(p=>p.price < (S.settings.guaranteeMin || 6.5) && !mainPoolIds.has(p.id) && !reserveSoldIds.has(p.id) && !reserveTaken.has(p.id)) : [];
   const clubs=[...new Set(excluded.map(p=>p.team))].sort();
   clubSel.innerHTML='<option value="">All clubs</option>'+clubs.map(c=>`<option${c===prevClub?" selected":""}>${esc(c)}</option>`).join("");
   const q=$("#rSearch").value.toLowerCase(), pos=$("#rPos").value, club=clubSel.value, tier=$("#rTier").value;
