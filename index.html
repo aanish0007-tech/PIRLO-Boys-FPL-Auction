@@ -1229,7 +1229,7 @@ function hammer(){
     m.budget=+(m.budget-ob.bid).toFixed(1); m.spent=+(m.spent+ob.bid).toFixed(1);
     S.log.unshift({playerId:p.id,name:p.name,buyer:m.name,buyerId:m.id,amount:ob.bid,type:"sold",ts:Date.now()});
     sndSold(); toast(`SOLD! ${p.name} → ${m.name} for ${fmt(ob.bid)} 🔨`);
-    $("#rostrum").classList.add("soldflash"); setTimeout(()=>$("#rostrum").classList.remove("soldflash"),700);
+    $("#rostrumInner").classList.add("soldflash"); setTimeout(()=>$("#rostrumInner").classList.remove("soldflash"),700);
   }else{
     // unsold → recycle to a random later point in the remaining queue
     S.log.unshift({playerId:p.id,name:p.name,buyer:"—",amount:0,type:"passed",ts:Date.now()});
