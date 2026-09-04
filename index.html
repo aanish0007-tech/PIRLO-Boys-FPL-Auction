@@ -274,7 +274,6 @@ header{box-shadow:0 6px 30px rgba(0,0,0,.28)}
     <nav id="liveNav" aria-label="Manager view">
       <button data-v="squads" class="on">Squads</button>
       <button data-v="players">Auction Pool</button>
-      <button data-v="liveRemaining">Remaining Pool</button>
       <button data-v="profiles">Manager Profiles</button>
     </nav>
     <div class="hspacer"></div>
@@ -414,24 +413,6 @@ header{box-shadow:0 6px 30px rgba(0,0,0,.28)}
     </div>
     <div style="overflow:auto"><table id="remTable"><thead><tr>
       <th data-s="name">Player</th><th data-s="team">Team</th><th data-s="pos">Pos</th><th data-s="price">Price</th><th data-s="tier">Tier</th><th data-s="pts" id="rthPts">Pts</th><th data-s="ppg">PPG</th><th>Action</th>
-    </tr></thead><tbody></tbody></table></div>
-  </div>
-</section>
-
-<!-- ================= LIVE REMAINING POOL ================= -->
-<section class="view wide" id="v-liveRemaining">
-  <div class="card">
-    <div class="section-head">
-      <div><h2>Reserve Pool</h2><div class="muted small">FPL players not selected for the main auction pool.</div></div>
-      <div class="stat" id="liveRemainingCount">0 players</div>
-    </div>
-    <div class="filters">
-      <input type="search" id="liveRemainingSearch" placeholder="Search player or team…">
-      <select id="liveRemainingPos"><option value="">All positions</option><option>GK</option><option>DEF</option><option>MID</option><option>FWD</option></select>
-      <span class="small muted" id="liveRemainingNote"></span>
-    </div>
-    <div style="overflow:auto"><table id="liveRemainingTable"><thead><tr>
-      <th>Player</th><th>Team</th><th>Pos</th><th>Price</th><th>Tier</th>
     </tr></thead><tbody></tbody></table></div>
   </div>
 </section>
