@@ -388,7 +388,7 @@ header{box-shadow:0 6px 30px rgba(0,0,0,.28)}
       <select id="fClub"><option value="">All clubs</option></select>
       <select id="fOwner"><option value="">Won by: anyone</option></select>
       <select id="fTier"><option value="">All tiers</option><option value="1">Tier 1</option><option value="2">Tier 2</option><option value="3">Tier 3</option></select>
-      <select id="fStatus"><option value="available">Available</option><option value="sold">Sold</option><option value="">Everything</option></select>
+      <select id="fStatus"><option value="" selected>Everything</option><option value="available">Available</option><option value="sold">Sold</option></select>
       <span class="small muted" id="fCount"></span>
       <div class="hspacer"></div>
       <button class="hbtn" data-refresh="players">⟳ Refresh</button>
@@ -1554,6 +1554,10 @@ function renderLiveRemaining(){
   </tr>`).join("") || `<tr><td colspan="7" class="muted" style="text-align:center;padding:28px">No players remaining.</td></tr>`;
 }
 
+// Auction Pool table sort state
+let sortKey="price", sortDir=-1;
+
+// Reserve/Remaining table sort state
 let rSortKey="price", rSortDir=-1;
 function renderRemaining(){
   const clubSel=$("#rClub"), prevClub=clubSel.value;
