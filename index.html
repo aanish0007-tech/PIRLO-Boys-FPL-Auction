@@ -516,6 +516,7 @@ function freshState(){
     mainPoolSeenIds: [],         // main-pool players that have appeared on the rostrum at least once
     mainPoolFirstCycleComplete: false,
     nextReservePlayerId: null,  // one reserve player waiting to be the next lot
+    reserveSoldIds: [],          // reserve players permanently removed from Reserve Pool after sale
     manualPoolIds: [],          // reserve-pool players manually added to the main auction pool
     queueBuilt: false,         // setup has prepared the sealed auction queue
     view: "setup",
@@ -552,6 +553,7 @@ function migrate(s){
   }
   if(s.startedAt==null) s.startedAt=null;
   if(!Array.isArray(s.manualPoolIds)) s.manualPoolIds=[];
+  if(!Array.isArray(s.reserveSoldIds)) s.reserveSoldIds=[];
   if(!Array.isArray(s.mainPoolIds)) s.mainPoolIds=[];
   if(!Array.isArray(s.mainPoolSeenIds)) s.mainPoolSeenIds=[];
   if(typeof s.mainPoolFirstCycleComplete!=="boolean") s.mainPoolFirstCycleComplete=false;
@@ -623,7 +625,12 @@ function save(immediate=false){
 function load(){ try{ return migrate(JSON.parse(localStorage.getItem(LS_KEY))); }catch(e){ return null; } }
 
 function publicState(){
-  const poolIds=new Set((S.players||[]).map(p=>p.id));
+  // Reserve Pool is derived ONLY from the immutable FPL source and the finalized
+  // main auction pool. Reserve players temporarily brought to the rostrum must
+  // not mutate the source dataset or make the reserve list disappear.
+  const mainPoolIds=new Set(Array.isArray(S.mainPoolIds)&&S.mainPoolIds.length ? S.mainPoolIds : (S.queue||[]));
+  const reserveSoldIds=new Set(Array.isArray(S.reserveSoldIds)?S.reserveSoldIds:[]);
+  const reserveHeldId=S.nextReservePlayerId!=null ? S.nextReservePlayerId : (S.onBlock&&S.onBlock.reserve ? S.onBlock.pid : null);
   const playerPublic=p=>({
     id:p.id, name:p.name, web:p.web, team:p.team, pos:p.pos, price:p.price,
     tier:p.tier, photo:p.photo, status:p.status, ownerId:p.ownerId, paid:p.paid,
@@ -638,7 +645,7 @@ function publicState(){
     // Manager View needs the actual Reserve Pool: complete FPL source minus
     // the selected auction pool. The sealed auction queue is never published.
     reservePlayers: (Array.isArray(S.allPlayers)?S.allPlayers:[])
-      .filter(p=>!poolIds.has(p.id))
+      .filter(p=>!mainPoolIds.has(p.id) && !reserveSoldIds.has(p.id) && p.id!==reserveHeldId)
       .map(playerPublic),
     settings: { quota: S.settings.quota },
     started: !!S.started,
@@ -1178,6 +1185,7 @@ function buildQueue(){
   S.mainPoolSeenIds = [];
   S.mainPoolFirstCycleComplete = false;
   S.nextReservePlayerId = null;
+  S.reserveSoldIds = [];
   S.poolLocked = false;
   S.poolAudit = {
     target:S.settings.targetPool||220,
@@ -1391,6 +1399,12 @@ function hammer(){
     player.status="sold";
     player.ownerId=manager.id;
     player.paid=finalPrice;
+    // Reserve players are not part of the main pool. Track their sale separately
+    // so the Reserve Pool can be derived from the immutable FPL source.
+    if(ob.reserve){
+      if(!Array.isArray(S.reserveSoldIds)) S.reserveSoldIds=[];
+      if(!S.reserveSoldIds.includes(player.id)) S.reserveSoldIds.push(player.id);
+    }
     manager.budget=+(manager.budget-finalPrice).toFixed(1);
     manager.spent=+(manager.spent+finalPrice).toFixed(1);
     S.log.unshift({playerId:player.id,name:player.name,buyer:manager.name,buyerId:manager.id,amount:finalPrice,type:"sold",ts:Date.now()});
@@ -1777,11 +1791,12 @@ let rSortKey="price", rSortDir=-1;
 function renderRemaining(){
   const clubSel=$("#rClub"), prevClub=clubSel.value;
   const source=Array.isArray(S.allPlayers)?S.allPlayers:[];
-  const poolIds=new Set(S.players.map(p=>p.id));
+  const mainPoolIds=new Set(Array.isArray(S.mainPoolIds)&&S.mainPoolIds.length ? S.mainPoolIds : (S.queue||[]));
+  const reserveSoldIds=new Set(Array.isArray(S.reserveSoldIds)?S.reserveSoldIds:[]);
   const reserveTaken=new Set();
   if(S.nextReservePlayerId!=null) reserveTaken.add(S.nextReservePlayerId);
   if(S.onBlock && S.onBlock.reserve) reserveTaken.add(S.onBlock.pid);
-  const excluded=S.queueBuilt ? source.filter(p=>!poolIds.has(p.id) && !reserveTaken.has(p.id)) : [];
+  const excluded=S.queueBuilt ? source.filter(p=>!mainPoolIds.has(p.id) && !reserveSoldIds.has(p.id) && !reserveTaken.has(p.id)) : [];
   const clubs=[...new Set(excluded.map(p=>p.team))].sort();
   clubSel.innerHTML='<option value="">All clubs</option>'+clubs.map(c=>`<option${c===prevClub?" selected":""}>${esc(c)}</option>`).join("");
   const q=$("#rSearch").value.toLowerCase(), pos=$("#rPos").value, club=clubSel.value, tier=$("#rTier").value;
