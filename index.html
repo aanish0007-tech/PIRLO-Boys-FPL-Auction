@@ -2063,36 +2063,82 @@ function exportXLSX(){
   const wb=XLSX.utils.book_new();
   const pmap=Object.fromEntries(S.participants.map(m=>[m.id,m.name]));
 
-  // Export player information only. Photos/profile data are intentionally excluded
-  // to keep the Excel file clean and avoid Excel's 32,767-character cell limit.
-  const rows=S.players.map(p=>({
-    ID:p.id,
-    Name:p.name,
-    WebName:p.web||"",
-    Club:p.team,
-    Position:p.pos,
-    ListPrice:p.price,
-    Tier:p.tier,
-    SeasonPts:p.pts??"",
-    PPG:p.ppg??"",
-    Status:p.status,
-    OwnerID:p.ownerId??"",
-    Owner:p.ownerId?(pmap[p.ownerId]||""):"",
-    Paid:p.paid||0
+  // Full auction snapshot. The Players sheet is the current auction pool;
+  // AllPlayers preserves the complete FPL source, including reserve/passed players.
+  const playerRows=list=>(Array.isArray(list)?list:[]).map(p=>({
+    ID:p.id, Name:p.name, WebName:p.web||"", Club:p.team||"", Position:p.pos||"",
+    ListPrice:p.price??0, Tier:p.tier??3, SeasonPts:p.pts??"", PPG:p.ppg??"",
+    Status:p.status||"available", OwnerID:p.ownerId??"", Owner:p.ownerId?(pmap[p.ownerId]||""):"",
+    Paid:p.paid||0, DataJSON:JSON.stringify(p)
   }));
 
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),"Players");
-  XLSX.writeFile(wb,`pirlo-fpl-players-${new Date().toISOString().slice(0,10)}.xlsx`);
-  toast("Player information exported to Excel ✓");
-}
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(playerRows(S.players)),"Players");
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(playerRows(S.allPlayers)),"AllPlayers");
 
+  const managerRows=S.participants.map(m=>({
+    ID:m.id, Name:m.name, Budget:m.budget??0, Spent:m.spent??0, DataJSON:JSON.stringify(m)
+  }));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(managerRows),"Managers");
+
+  const settingRows=[];
+  for(const [k,v] of Object.entries(S.settings||{})) settingRows.push({Key:k,Value:typeof v==="object"?JSON.stringify(v):v});
+  settingRows.push({Key:"qIndex",Value:S.qIndex||0});
+  settingRows.push({Key:"started",Value:S.started?1:0});
+  settingRows.push({Key:"theme",Value:S.theme||"dark"});
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(settingRows),"Settings");
+
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet((S.queue||[]).map((id,i)=>({Order:i,PlayerID:id}))),"Queue");
+
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet((S.log||[]).map(l=>({
+    Type:l.type, PlayerID:l.playerId, Player:l.name||"", BuyerID:l.buyerId??"", Buyer:l.buyer||"—",
+    Amount:l.amount||0, Time:l.ts?new Date(l.ts).toISOString():""
+  }))),"Log");
+
+  // State sheet contains the remaining non-tabular auction state needed to restore exactly.
+  const stateRows=[
+    ["Field","Value"],
+    ["rawLoaded",S.rawLoaded?1:0],
+    ["qIndex",S.qIndex||0],
+    ["started",S.started?1:0],
+    ["startedAt",S.startedAt||""],
+    ["mainAuctionComplete",S.mainAuctionComplete?1:0],
+    ["mainPoolIds",JSON.stringify(S.mainPoolIds||[])],
+    ["mainPoolSeenIds",JSON.stringify(S.mainPoolSeenIds||[])],
+    ["mainPoolFirstCycleComplete",S.mainPoolFirstCycleComplete?1:0],
+    ["nextReservePlayerId",S.nextReservePlayerId??""],
+    ["reserveSoldIds",JSON.stringify(S.reserveSoldIds||[])],
+    ["manualPoolIds",JSON.stringify(S.manualPoolIds||[])],
+    ["queueBuilt",S.queueBuilt?1:0],
+    ["profileSelected",S.profileSelected||1],
+    ["theme",S.theme||"dark"],
+    ["sharedRevision",S.sharedRevision||0],
+    ["onBlock",JSON.stringify(S.onBlock||null)],
+    ["subs",JSON.stringify(S.subs||{})],
+    ["subHistory",JSON.stringify(S.subHistory||[])],
+    ["board",JSON.stringify(S.board||null)],
+    ["timeLeft",typeof timeLeft==="number"?timeLeft:0]
+  ];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(stateRows),"State");
+
+  XLSX.writeFile(wb,`pirlo-fpl-auction-state-${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast("Full auction state exported to Excel ✓");
+}
 function importXLSX(buf){
   if(typeof XLSX==="undefined"){ toast("Excel library didn't load — check your connection and refresh."); return; }
   const wb=XLSX.read(buf,{type:"array"});
   const sh=n=>wb.Sheets[n]?XLSX.utils.sheet_to_json(wb.Sheets[n]):[];
-  const P=sh("Players"), M=sh("Managers");
+  const P=sh("Players"), AP=sh("AllPlayers"), M=sh("Managers");
   if(!P.length||!M.length){ toast("That workbook needs at least the Players and Managers sheets."); return; }
   const ns=freshState();
+  const parsePlayer=r=>{
+    if(r.DataJSON){ try{return JSON.parse(String(r.DataJSON));}catch(e){} }
+    return {id:String(r.ID),name:String(r.Name||"?"),web:String(r.WebName||r.Name||""),team:String(r.Club||"—"),
+      pos:POS.includes(r.Position)?r.Position:"MID",price:+r.ListPrice||0,tier:Math.min(3,Math.max(1,+r.Tier||3)),
+      pts:r.SeasonPts!==""&&r.SeasonPts!=null?+r.SeasonPts:null,ppg:r.PPG!==""&&r.PPG!=null?+r.PPG:null,
+      photo:String(r.Photo||"")||null,ownerId:r.OwnerID!==""&&r.OwnerID!=null?+r.OwnerID:null,
+      paid:+r.Paid||0,status:String(r.Status||"available")};
+  };
+
   // settings + meta
   for(const r of sh("Settings")){
     const k=r.Key,v=r.Value;
@@ -2104,47 +2150,67 @@ function importXLSX(buf){
     else if(k==="started") ns.started=!!+v;
     else if(k==="theme") ns.theme=v==="light"?"light":"dark";
   }
-  ns.participants=M.map(m=>({id:+m.ID,name:String(m.Name||"Manager"),budget:+m.Budget||0,spent:+m.Spent||0}));
-  ns.profiles={}; const PR=wb.Sheets["Profiles"]?XLSX.utils.sheet_to_json(wb.Sheets["Profiles"]):[]; PR.forEach(r=>{ const id=+r.ManagerID; if(id) ns.profiles[id]={photo:String(r.Photo||""),teamName:String(r.TeamName||""),history:{"2023/24":String(r["2023/24 Position"]||""),"2024/25":String(r["2024/25 Position"]||""),"2025/26":String(r["2025/26 Position"]||"")}}; });
-  ns.players=P.map(p=>({id:String(p.ID),name:String(p.Name||"?"),web:String(p.WebName||p.Name||""),team:String(p.Club||"—"),
-    pos:POS.includes(p.Position)?p.Position:"MID",price:+p.ListPrice||0,
-    tier:Math.min(3,Math.max(1,+p.Tier||3)),
-    pts:p.SeasonPts!==""&&p.SeasonPts!=null?+p.SeasonPts:null, ppg:p.PPG!==""&&p.PPG!=null?+p.PPG:null, photo:String(p.Photo||"")||null,
-    ownerId:p.OwnerID!==""&&p.OwnerID!=null?+p.OwnerID:null,
-    paid:+p.Paid||0,status:"available"}));
-  // ownership drives status; budgets are recomputed from Paid so hand-edits in Excel stay consistent
-  ns.players.forEach(p=>{ if(p.ownerId!=null && ns.participants.some(m=>m.id===p.ownerId)) p.status="sold"; else {p.ownerId=null;p.paid=0;} });
+
+  ns.participants=M.map(m=>{
+    if(m.DataJSON){try{return JSON.parse(String(m.DataJSON));}catch(e){}}
+    return {id:+m.ID,name:String(m.Name||"Manager"),budget:+m.Budget||0,spent:+m.Spent||0};
+  });
+
+  ns.players=P.map(parsePlayer);
+  ns.allPlayers=(AP.length?AP:P).map(parsePlayer);
+  ns.rawLoaded=ns.allPlayers.length>0;
+
+  // Keep ownership/status exactly as exported; repair only clearly invalid ownership.
+  ns.players.forEach(p=>{
+    if(p.ownerId!=null && ns.participants.some(m=>m.id===p.ownerId)) p.status="sold";
+    else if(p.status==="sold"){ p.ownerId=null; p.paid=0; p.status="available"; }
+  });
   ns.participants.forEach(m=>{
-    m.spent=+ns.players.filter(p=>p.ownerId===m.id).reduce((a,p)=>a+p.paid,0).toFixed(1);
+    m.spent=+ns.players.filter(p=>p.ownerId===m.id).reduce((a,p)=>a+(+p.paid||0),0).toFixed(1);
     m.budget=+(ns.settings.budget-m.spent).toFixed(1);
   });
-  ns.allPlayers=ns.players.map(x=>({...x}));
-  ns.rawLoaded=ns.players.length>0;
+
   ns.log=sh("Log").map(l=>({type:l.Type==="sold"?"sold":"passed",playerId:String(l.PlayerID),name:String(l.Player||""),
     buyerId:l.BuyerID!==""&&l.BuyerID!=null?+l.BuyerID:null,buyer:String(l.Buyer||"—"),
     amount:+l.Amount||0,ts:Date.parse(l.Time)||Date.now()}));
-  // any sold player missing a log entry (e.g. added by hand in Excel) gets one, so ✎/↩ always work
-  for(const p of ns.players){ if(p.status==="sold"&&!ns.log.some(l=>l.type==="sold"&&l.playerId===p.id)){
-    const m=ns.participants.find(x=>x.id===p.ownerId);
-    ns.log.unshift({type:"sold",playerId:p.id,name:p.name,buyerId:p.ownerId,buyer:m?m.name:"?",amount:p.paid,ts:Date.now()});
-  }}
-  ns.queue=sh("Queue").sort((a,b)=>a.Order-b.Order).map(r=>String(r.PlayerID)).filter(id=>ns.players.some(p=>p.id===id));
-  // make sure every still-available player has a spot in the sealed queue
-  const inQ=new Set(ns.queue);
-  for(const p of ns.players){ if(p.status==="available"&&!inQ.has(p.id)){
-    const rest=Math.max(1,ns.queue.length-ns.qIndex);
-    ns.queue.splice(Math.min(ns.queue.length,ns.qIndex+1+Math.floor(rand()*rest)),0,p.id);
-  }}
-  ns.qIndex=Math.min(ns.qIndex,ns.queue.length);
-  ns.onBlock=null; ns.view=S.view;
+
+  ns.queue=sh("Queue").sort((a,b)=>a.Order-b.Order).map(r=>String(r.PlayerID)).filter(id=>ns.allPlayers.some(p=>p.id===id));
+  const stateRows=sh("State");
+  const state=Object.fromEntries(stateRows.map(r=>[r.Field,r.Value]));
+  const json=(k,def)=>{try{return state[k]!=null&&state[k]!==""?JSON.parse(String(state[k])):def;}catch(e){return def;}};
+  if(state.qIndex!=null) ns.qIndex=+state.qIndex||0;
+  if(state.rawLoaded!=null) ns.rawLoaded=!!+state.rawLoaded;
+  if(state.started!=null) ns.started=!!+state.started;
+  if(state.startedAt!=="") ns.startedAt=+state.startedAt||null;
+  if(state.mainAuctionComplete!=null) ns.mainAuctionComplete=!!+state.mainAuctionComplete;
+  ns.mainPoolIds=json("mainPoolIds",ns.mainPoolIds);
+  ns.mainPoolSeenIds=json("mainPoolSeenIds",ns.mainPoolSeenIds);
+  if(state.mainPoolFirstCycleComplete!=null) ns.mainPoolFirstCycleComplete=!!+state.mainPoolFirstCycleComplete;
+  ns.nextReservePlayerId=state.nextReservePlayerId!==""&&state.nextReservePlayerId!=null?String(state.nextReservePlayerId):null;
+  ns.reserveSoldIds=json("reserveSoldIds",ns.reserveSoldIds);
+  ns.manualPoolIds=json("manualPoolIds",ns.manualPoolIds);
+  if(state.queueBuilt!=null) ns.queueBuilt=!!+state.queueBuilt;
+  if(state.profileSelected!=null) ns.profileSelected=+state.profileSelected||1;
+  if(state.theme) ns.theme=state.theme==="light"?"light":"dark";
+  if(state.sharedRevision!=null) ns.sharedRevision=+state.sharedRevision||0;
+  ns.onBlock=json("onBlock",null);
+  ns.subs=json("subs",{});
+  ns.subHistory=json("subHistory",[]);
+  ns.board=json("board",null);
+
+  // Restore the current lot rather than calling nextLot(), which would advance the auction.
   S=migrate(ns); normalizeIds(); save();
   document.documentElement.dataset.theme=S.theme;
   clearInterval(timerH);
-  if(S.started){ nextLot(); }
+  timeLeft=Math.max(0,+state.timeLeft||0);
+  paused=false;
+  if(S.started && S.onBlock){
+    if(timeLeft<=0) timeLeft=timerForTier((pById(S.onBlock.pid)||{}).tier);
+    timerH=setInterval(tick,1000);
+  }
   switchView(S.view||"setup");
-  toast(`Imported ✓ ${S.players.length} players, ${S.participants.length} managers${S.started?" — auction resumed":""}`);
+  toast(`Imported ✓ full auction state restored — ${S.players.length} auction-pool players, ${S.allPlayers.length} total players`);
 }
-
 /* ============================== EVENTS ============================== */
 document.addEventListener("click", e=>{
   const t=e.target.closest("button"); if(!t) return;
