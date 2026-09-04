@@ -574,11 +574,14 @@ function publicState(){
     version: 1,
     updatedAt: Date.now(),
     participants: S.participants,
+    profiles: S.profiles || {},
     players: S.players.map(p=>({
       id:p.id, name:p.name, web:p.web, team:p.team, pos:p.pos, price:p.price,
       tier:p.tier, photo:p.photo, status:p.status, ownerId:p.ownerId, paid:p.paid
     })),
     settings: { quota: S.settings.quota },
+    subs: S.subs || {},
+    subHistory: S.subHistory || [],
     started: !!S.started,
     mainAuctionComplete: !!S.mainAuctionComplete,
     log: (S.log||[]).slice(0,200)
@@ -614,7 +617,7 @@ async function publishSharedState(){
     }
     const r=await fetch(SHARED_STATE_URL,{
       method:"POST",
-      headers:{"Content-Type":"application/json","X-Auction-Key":SHARED_STATE_KEY},
+      headers:{"Content-Type":"text/plain","X-Auction-Key":SHARED_STATE_KEY},
       body:payload,
       mode:"cors",
       cache:"no-store"
@@ -1229,7 +1232,7 @@ function hammer(){
     m.budget=+(m.budget-ob.bid).toFixed(1); m.spent=+(m.spent+ob.bid).toFixed(1);
     S.log.unshift({playerId:p.id,name:p.name,buyer:m.name,buyerId:m.id,amount:ob.bid,type:"sold",ts:Date.now()});
     sndSold(); toast(`SOLD! ${p.name} → ${m.name} for ${fmt(ob.bid)} 🔨`);
-    $("#rostrumInner").classList.add("soldflash"); setTimeout(()=>$("#rostrumInner").classList.remove("soldflash"),700);
+    $("#rostrumInner")?.classList.add("soldflash"); setTimeout(()=>$("#rostrumInner")?.classList.remove("soldflash"),700);
   }else{
     // unsold → recycle to a random later point in the remaining queue
     S.log.unshift({playerId:p.id,name:p.name,buyer:"—",amount:0,type:"passed",ts:Date.now()});
