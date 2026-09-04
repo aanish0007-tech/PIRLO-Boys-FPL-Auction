@@ -1397,6 +1397,10 @@ function undoLast(){
 }
 
 /* ============================== RENDER ============================== */
+
+// Auction Pool table sort state
+let sortKey="price", sortDir=-1;
+
 function switchView(v){
   if(LIVE_VIEW && !["squads","players","liveRemaining","profiles"].includes(v)) v="squads";
   if(!document.getElementById("v-"+v)) v="setup";
@@ -1553,9 +1557,6 @@ function renderLiveRemaining(){
     <td class="mono">${p.pts??"—"}</td><td class="mono">${p.ppg!=null?(+p.ppg).toFixed(1):"—"}</td>
   </tr>`).join("") || `<tr><td colspan="7" class="muted" style="text-align:center;padding:28px">No players remaining.</td></tr>`;
 }
-
-// Auction Pool table sort state
-let sortKey="price", sortDir=-1;
 
 // Reserve/Remaining table sort state
 let rSortKey="price", rSortDir=-1;
