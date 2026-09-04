@@ -100,8 +100,6 @@ tbody tr:hover{background:var(--card2)}
 @media(max-width:800px){.subcontrols{grid-template-columns:1fr}.subrow{grid-template-columns:64px 1fr}.subrow .cellbtns{grid-column:2}}
 
 /* ---------- auction ---------- */
-.auction-pause-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;margin-bottom:14px;border:1px solid var(--amber);border-radius:10px;background:var(--amber-soft);color:var(--ink);font-size:13px}.auction-pause-banner b{color:var(--amber)}.auction-pause-banner span{color:var(--muted)}.auction-pause-banner.auction-running{border-color:var(--line);background:var(--card2)}@media(max-width:700px){.auction-pause-banner{flex-wrap:wrap}.auction-pause-banner .btn{margin-left:auto}}
-
 .auction-dashboard{display:flex;flex-direction:column;gap:14px}
 .auction-topbar{display:grid;grid-template-columns:1.25fr 1fr 1.15fr 1fr 1fr;gap:0;background:#07111a;border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
 .auction-stat{min-height:112px;padding:18px 22px;border-right:1px solid var(--line);display:flex;flex-direction:column;justify-content:center}.auction-stat:last-child{border-right:none}.auction-stat .label{font-size:11px;text-transform:uppercase;letter-spacing:1.3px;color:var(--muted);font-weight:700}.auction-stat .big{font:800 30px 'Chakra Petch';color:var(--turf);margin-top:7px;line-height:1}.auction-stat .sub{font-size:12px;margin-top:8px;color:var(--muted)}
@@ -505,8 +503,7 @@ function freshState(){
     view: "setup",
     profileSelected: 1,
     theme: (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"),
-    sharedRevision: 0,
-    paused: false
+    sharedRevision: 0
   };
 }
 function migrate(s){
@@ -570,7 +567,6 @@ function migrate(s){
   delete s.settings.poolCaps;
   delete s.settings.leagueId;
   s.board = s.board || null;
-  if(s.paused==null) s.paused=false;
   s.subs = s.subs || {};
   s.participants.forEach(m=>{ s.subs[m.id] = Object.assign({DEF:null,MID:null,FWD:null}, s.subs[m.id]||{}); });
   s.subHistory = Array.isArray(s.subHistory) ? s.subHistory : [];
@@ -640,7 +636,6 @@ function publicState(){
     qIndex: Number.isFinite(+S.qIndex) ? +S.qIndex : 0,
     mainAuctionComplete: !!S.mainAuctionComplete,
     mainPoolFirstCycleComplete: !!S.mainPoolFirstCycleComplete,
-    paused: !!S.paused,
     log: (S.log||[]).slice(0,200)
   };
 }
@@ -782,8 +777,6 @@ async function loadSharedState(){
     // its own sealed queue, queueBuilt flag, current block and completion state.
     S.mainAuctionComplete = !!data.mainAuctionComplete;
     S.mainPoolFirstCycleComplete = !!data.mainPoolFirstCycleComplete;
-    S.paused = !!data.paused;
-    paused = S.paused;
     normalizeIds();
     renderView(liveTab);
     const stamp=data.updatedAt?new Date(data.updatedAt).toLocaleTimeString():"";
@@ -1245,7 +1238,6 @@ function startAuction(){
     S.startedAt = Date.now();
     S.poolLocked = true;
     S.qIndex = 0;
-    S.paused = false;
   }
   nextLot();
   switchView("auction");
@@ -1324,7 +1316,7 @@ function nextLot(){
         auctionPlayer.status="available";
       }
       S.onBlock={pid:auctionPlayer.id,bid:0,bidderId:null,reserve:true};
-      timeLeft=timerForTier(rp.tier); S.paused=false; paused=false;
+      timeLeft=timerForTier(rp.tier); paused=false;
       timerH=setInterval(tick,1000);
       save(); renderAuction(); return;
     }
@@ -1374,12 +1366,12 @@ function nextLot(){
   }
   const p=pById(S.queue[S.qIndex]);
   S.onBlock={pid:p.id,bid:0,bidderId:null,reserve:false};
-  timeLeft=timerForTier(p.tier); S.paused=false; paused=false;
+  timeLeft=timerForTier(p.tier); paused=false;
   timerH=setInterval(tick,1000);
   save(); renderAuction();
 }
 function tick(){
-  if(S.paused || paused) return;
+  if(paused) return;
   timeLeft--;
   if(timeLeft===5) sndOnce();
   if(timeLeft===2) sndTwice();
@@ -1388,7 +1380,6 @@ function tick(){
   renderAuctionTopStats();
 }
 function selectWinner(id){
-  if(S.paused){ toast("Auction is paused — resume to continue bidding."); return; }
   const ob=S.onBlock; if(!ob) return;
   const p=pById(ob.pid), m=partById(id);
   if(!m){ ob.bidderId=null; save(); renderAuction(); return; }
@@ -1400,7 +1391,6 @@ function selectWinner(id){
   sndBid(); save(); renderAuction();
 }
 function setPrice(v){
-  if(S.paused){ toast("Auction is paused — resume to continue bidding."); return; }
   const ob=S.onBlock; if(!ob) return;
   v = Math.max(S.settings.openBid, +(+v).toFixed(1));
   const w = ob.bidderId ? partById(ob.bidderId) : null;
@@ -1408,7 +1398,6 @@ function setPrice(v){
   ob.bid = v; save(); renderAuction();
 }
 function hammer(){
-  if(S.paused){ toast("Auction is paused — resume before recording the result."); return; }
   const ob=S.onBlock; if(!ob) return;
   const player=pById(ob.pid); if(!player) return;
 
@@ -1692,11 +1681,9 @@ function formatElapsed(ms){
 function renderAuctionTopStats(){
   const el=$("#auctionTopStats"); if(!el) return;
   const sold=S.log.filter(l=>l.type==="sold").length;
-  const passed=S.log.filter(l=>l.type==="passed").length;
-  const completed=sold+passed;
   const total=S.players.length||S.settings.targetPool||220;
-  const remaining=Math.max(0,total-completed);
-  const pct=total?Math.min(100,completed/total*100):0;
+  const remaining=Math.max(0,total-sold);
+  const pct=total?Math.min(100,sold/total*100):0;
   const elapsed=auctionElapsedMs();
   const hours=elapsed/3600000;
   const pace=hours>0 ? sold/hours : 0;
@@ -1706,8 +1693,8 @@ function renderAuctionTopStats(){
   const r=29,c=2*Math.PI*r,off=c*(1-pct/100);
   el.innerHTML=`
     <div class="auction-stat"><div class="label">Auction Timer</div><div class="big">⏱ ${formatElapsed(elapsed)}</div><div class="sub">${S.startedAt?`Started ${new Date(S.startedAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`:"Not started"}</div></div>
-    <div class="auction-stat"><div class="label">Players Completed</div><div class="big">${completed} <span style="color:var(--ink);font-size:21px">/ ${total}</span></div><div class="sub"><b style="color:var(--turf)">${sold} Sold</b> · <b style="color:var(--danger)">${passed} Passed</b> · <b>${remaining}</b> left</div></div>
-    <div class="auction-stat"><div class="label">Auction Progress</div><div class="auction-progress"><div class="progress-ring-mini"><svg width="72" height="72"><circle cx="36" cy="36" r="${r}" fill="none" stroke="#1b2a35" stroke-width="7"/><circle cx="36" cy="36" r="${r}" fill="none" stroke="var(--turf)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${off}"/></svg><div class="ringval">${Math.round(pct)}%</div></div><div class="auction-progress-copy"><div><b>${completed}</b> of ${total} Players Completed</div><div class="progress-track"><i style="width:${pct}%"></i></div><div class="sub"><b>${sold}</b> Sold · <b style="color:var(--danger)">${passed}</b> Passed</div></div></div></div>
+    <div class="auction-stat"><div class="label">Players Sold</div><div class="big">${sold} <span style="color:var(--ink);font-size:21px">/ ${total}</span></div><div class="sub"><b style="color:var(--turf)">${remaining}</b> Players Remaining</div></div>
+    <div class="auction-stat"><div class="label">Auction Progress</div><div class="auction-progress"><div class="progress-ring-mini"><svg width="72" height="72"><circle cx="36" cy="36" r="${r}" fill="none" stroke="#1b2a35" stroke-width="7"/><circle cx="36" cy="36" r="${r}" fill="none" stroke="var(--turf)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${off}"/></svg><div class="ringval">${Math.round(pct)}%</div></div><div class="auction-progress-copy"><div><b>${sold}</b> of ${total} Players Sold</div><div class="progress-track"><i style="width:${pct}%"></i></div><div class="sub"><b>${remaining}</b> Players Remaining</div></div></div></div>
     <div class="auction-stat auction-pace"><div class="label">Pace</div><div class="pace-values"><div><strong>${pace?Math.round(pace):0}</strong><small>players / hour</small></div><div><strong>${Math.round(required)}</strong><small>required</small></div></div><div class="pace-ok" style="color:${onTrack?'var(--turf)':'var(--danger)'}">${onTrack?'✓ On Track':'⚠ Behind Pace'}</div></div>
     <div class="auction-stat"><div class="label">Target Duration</div><div class="big">◷ 3h 00m</div><div class="sub">Planned Duration</div></div>`;
 }
@@ -1730,22 +1717,20 @@ function renderAuction(){
     const p=pById(S.onBlock.pid), ob=S.onBlock, w=ob.bidderId?partById(ob.bidderId):null;
     const priceOk=w && ob.bid>=S.settings.openBid && ob.bid<=maxBid(w);
     const sold=S.log.filter(l=>l.type==="sold").length;
-    if(lot) lot.textContent=`LOT ${completed+1} · ON THE BLOCK`;
+    if(lot) lot.textContent=`LOT ${sold+1} · ON THE BLOCK`;
     const photoUrl=playerPhotoUrl(p);
     const passedBefore=S.log.some(l=>l.type==="passed"&&l.playerId===p.id);
     const passBadge=passedBefore?`<div style="margin-top:8px"><span class="pill" style="background:var(--danger);color:#fff">↩ PASSED EARLIER</span></div>`:"";
     const photo=photoUrl?`<img src="${photoUrl}" alt="${esc(p.name)}" loading="eager" onerror="this.onerror=null;this.parentElement.innerHTML='<div class=&quot;fallback&quot;>${esc((p.name||"?").slice(0,1).toUpperCase())}</div>';" />`:`<div class="fallback">${esc((p.name||"?").slice(0,1).toUpperCase())}</div>`;
-    const pauseBar=S.paused ? `<div class="auction-pause-banner"><b>⏸ AUCTION PAUSED — BREAK</b><span>${completed} players completed · ${sold} sold · ${passed} passed</span><button class="btn gold" id="btnPause">▶ RESUME AUCTION</button></div>` : `<div class="auction-pause-banner auction-running"><span>🔨 ${completed} players completed · ${sold} sold · ${passed} passed</span><button class="btn ghost" id="btnPause">⏸ PAUSE AUCTION</button></div>`;
     R.innerHTML=`
-      ${pauseBar}
       <div class="current-player-card"><div class="current-player-photo">${photo}</div><div class="current-player-copy">
         <h1>${esc(p.name)}</h1><div class="clubline">${esc(p.team)} <span>•</span> ${esc(p.pos)}</div>${passBadge}
         <div class="player-detail-line">${p.age!=null?`Age: <b>${esc(String(p.age))}</b> <span style="margin:0 10px">•</span>`:""}${p.nation?`<b>${esc(p.nation)}</b>`:""}</div>
         <div class="player-facts"><div class="player-fact"><small>List Price</small><b>${fmt(p.price)}</b></div><div class="player-fact"><small>Base Price</small><b>${fmt(S.settings.openBid)}</b></div><div class="player-fact"><small>Season Points</small><b>${p.pts??"—"}</b></div><div class="player-fact"><small>PPG</small><b>${p.ppg!=null?(+p.ppg).toFixed(1):"—"}</b></div></div>
       </div></div>
       <div class="highest-bid-card"><div class="label">HIGHEST BID</div><div class="amount">${fmt(ob.bid||0)}</div><div class="by">${w?`by <b>${esc(profileFor(w).teamName||w.name)}</b>`:"No bid recorded yet"}</div></div>
-      <div class="auction-action-row"><button class="btn btn-sold" id="btnHammer" ${priceOk&&!S.paused?"":"disabled"}>🔨 SOLD<small>Record Sale</small></button><button class="btn btn-pass" id="btnSkip" ${S.paused?"disabled":""}>⏭ UNSOLD / PASS<small>Next Player</small></button></div>
-      <div class="sale-controls"><div><label>Sold to — tap a manager</label><div class="manager-picker">${S.participants.map((m,i)=>{const el=eligible(m,p), pr=profileFor(m), name=pr.teamName||m.name;return `<button type="button" class="manager-pick ${m.id===ob.bidderId?"selected":""}" data-win="${m.id}" ${el&&!S.paused?"":"disabled"} title="${el?`Select ${esc(name)}`:`${esc(name)} cannot take this player`}"><span>${i+1}. ${esc(name)}</span><small>${esc(m.name)}</small></button>`}).join("")}</div></div><div><label>Final Price</label><input type="number" id="finalPrice" step="${S.settings.minBid}" min="${S.settings.openBid}" value="${ob.bid||S.settings.openBid}" ${S.paused?"disabled":""}></div><button class="btn confirm-sale" id="btnConfirmSale" ${priceOk&&!S.paused?"":"disabled"}>CONFIRM SALE</button></div>
+      <div class="auction-action-row"><button class="btn btn-sold" id="btnHammer" ${priceOk?"":"disabled"}>🔨 SOLD<small>Record Sale</small></button><button class="btn btn-pass" id="btnSkip">⏭ UNSOLD / PASS<small>Next Player</small></button></div>
+      <div class="sale-controls"><div><label>Sold to — tap a manager</label><div class="manager-picker">${S.participants.map((m,i)=>{const el=eligible(m,p), pr=profileFor(m), name=pr.teamName||m.name;return `<button type="button" class="manager-pick ${m.id===ob.bidderId?"selected":""}" data-win="${m.id}" ${el?"":"disabled"} title="${el?`Select ${esc(name)}`:`${esc(name)} cannot take this player`}"><span>${i+1}. ${esc(name)}</span><small>${esc(m.name)}</small></button>`}).join("")}</div></div><div><label>Final Price</label><input type="number" id="finalPrice" step="${S.settings.minBid}" min="${S.settings.openBid}" value="${ob.bid||S.settings.openBid}"></div><button class="btn confirm-sale" id="btnConfirmSale" ${priceOk?"":"disabled"}>CONFIRM SALE</button></div>
       <div class="auction-tip">💡 <b>TIP:</b> Run the auction in the room and record only the final sale here. The app will handle the rest! <button class="undo-inline" id="btnUndo">↩ Undo</button></div>
       <div class="auction-footer-note">🛡 Future player names and order are hidden 🔒</div>`;
     renderTimer();
@@ -2202,7 +2187,7 @@ document.addEventListener("click", e=>{
       S.poolAudit=null;
 
       S.participants.forEach(m=>{m.budget=S.settings.budget; m.spent=0;});
-      S.log=[]; S.board=null; S.onBlock=null; S.started=false; S.startedAt=null; S.paused=false; S.mainAuctionComplete=false; S.mainPoolIds=[]; S.mainPoolSeenIds=[]; S.mainPoolFirstCycleComplete=false; S.nextReservePlayerId=null;
+      S.log=[]; S.board=null; S.onBlock=null; S.started=false; S.startedAt=null; S.mainAuctionComplete=false; S.mainPoolIds=[]; S.mainPoolSeenIds=[]; S.mainPoolFirstCycleComplete=false; S.nextReservePlayerId=null;
       S.subs={}; S.subHistory=[];
 
       // Save locally and immediately overwrite Cloudflare so every Manager View
@@ -2228,10 +2213,10 @@ document.addEventListener("click", e=>{
   if(t.id==="sqSave") manualAssign();
   if(t.id==="sqCancel"){ sqEdit=null; renderSquads(); }
   if(t.dataset.sqdel){ if(confirm("Remove this player from the squad? They return to the auction pool and the manager is refunded.")) revertSale(t.dataset.sqdel); }
-  if(t.id==="btnRestartT"){ clearInterval(timerH); const p=S.onBlock?pById(S.onBlock.pid):null; timeLeft=timerForTier(p?.tier); paused=false; S.paused=false; timerH=setInterval(tick,1000); save(true); renderTimer(); renderAuction(); }
+  if(t.id==="btnRestartT"){ clearInterval(timerH); const p=S.onBlock?pById(S.onBlock.pid):null; timeLeft=timerForTier(p?.tier); paused=false; timerH=setInterval(tick,1000); renderTimer(); renderAuction(); }
   if(t.id==="btnHammer" || t.id==="btnConfirmSale"){ clearInterval(timerH); hammer(); }
   if(t.id==="btnSkip"){ if(S.onBlock){ S.onBlock.bidderId=null; clearInterval(timerH); hammer(); } }
-  if(t.id==="btnPause"){ if(!S.onBlock) return; S.paused=!S.paused; paused=S.paused; if(S.paused) clearInterval(timerH); else timerH=setInterval(tick,1000); save(true); renderTimer(); renderAuction(); }
+  if(t.id==="btnPause"){ paused=!paused; renderTimer(); renderAuction(); }
   if(t.id==="btnUndo") undoLast();
   if(t.id==="btnBoard") fetchScores();
   if(t.dataset.profileRemove){ const pr=profileFor(partById(+t.dataset.profileRemove)); pr.photo=""; save(); renderProfiles(); toast("Manager photo removed ✓"); }
@@ -2289,7 +2274,7 @@ document.addEventListener("keydown",e=>{
   if(n>=1&&n<=S.participants.length) selectWinner(S.participants[n-1].id);
   if(e.key==="+"||e.key==="ArrowUp"){ e.preventDefault(); setPrice((ob.bid||S.settings.openBid)+S.settings.minBid); }
   if(e.key==="-"||e.key==="ArrowDown"){ e.preventDefault(); setPrice((ob.bid||S.settings.openBid)-S.settings.minBid); }
-  if(e.key===" "){ e.preventDefault(); if(!S.onBlock) return; S.paused=!S.paused; paused=S.paused; if(S.paused) clearInterval(timerH); else timerH=setInterval(tick,1000); save(true); renderTimer(); renderAuction(); }
+  if(e.key===" "){ e.preventDefault(); paused=!paused; renderTimer(); renderAuction(); }
   if(e.key==="Enter"){ clearInterval(timerH); hammer(); }
 });
 
@@ -2328,7 +2313,7 @@ window.addEventListener("storage", e=>{
   const v=S.view; S=fresh; S.view=v;   // keep this window's own tab
   normalizeIds(); renderView(v);
 });
-if(S.started && S.onBlock){ const bp=pById(S.onBlock.pid); paused=!!S.paused; timeLeft=timerForTier(bp?.tier); if(!S.paused) timerH=setInterval(tick,1000); renderAuction(); }
+if(S.started && S.onBlock){ const bp=pById(S.onBlock.pid); timeLeft=timerForTier(bp?.tier); timerH=setInterval(tick,1000); renderAuction(); }
 /* Real-time pool: whenever the app opens BEFORE the auction has started, quietly
    re-fetch the latest players and prices from FPL (throttled to every 5 min).
    Once the auction starts, the pool is frozen — prices are locked for fairness. */
